@@ -1,0 +1,22 @@
+string getType
+  ret = "string"
+
+string dump
+  this = this + "!"
+  this getType print
+  ("DUMP: " + this) print
+
+main
+  a = 20
+  a + " = 20" print
+  a > 10
+    wow = "33"
+    (wow getType) print
+    hello = 32
+    hello print
+    wow print
+    test = "TEST"
+    test = test + " 0"
+    "TEST" dump
+    "TEST " + test dump
+    test print

@@ -1,0 +1,144 @@
+string dump
+  this = this + "!"
+  "DUMP: " + this print
+
+main
+  a = 20
+  a + " = 20" print
+  a > 10
+    wow = "33"
+    hello = 32
+    hello print
+    wow print
+    test = "TEST"
+    test = test + " 0"
+    "TEST" dump
+    "TEST " + test dump
+    test print
+
+=== fact example
+integer factorial
+  fac = a
+  res = 0
+  addr = 0
+  fac > 0
+    addr += 1
+    res += addr
+    fac -= 1
+main
+  a = 20
+  a + " = 20" print
+  a factorial 7 print
+  a > 10
+    wow = "33"
+    hello = 32
+    hello print
+    wow print
+
+
+// weight determined by position in sources
+
+string length
+  `sizeof $a` int
+
+string > int
+  a length > b
+    block
+    ret = true
+  else
+    ret = false
+
+string >: int
+  a > b while
+    block
+
+main
+  a = 20
+  b = a + " sdsdfsdf"
+  b print
+  35 + "wow" print
+  {wow: 23, "hello": "hello"} toString print
+  a > 10
+    "wow" print
+  a < 3 else
+    "not wow" print
+
+  // switch case
+  a // return a fo next command
+  10 // is block passed
+    "a=10" print
+  15
+    "a=15" print
+
+  a > 10
+    "a>10" print
+  a < 5 else
+    "a<5" print
+
+  db getUser myId state
+  "online"
+    "user is online" print
+  "offlines"
+    "user offline" print
+
+
+=== // shared variable scope in object operators
+user
+  "user inited" print
+  ""
+  status string
+
+user setStatus string // when pass to operator also pass structure of variables
+  status = b
+
+user getStatus string
+  ret = status
+
+
+function undefined_user(a, b, block, previous) {
+
+}
+
+
+== closures stuff
+a = 23
++
+  "a is positive" print
+
+res = db get "user"
+res print
+
+
+
+id = 66748
+name, status, age = db get "user", id
+
+== code
+undefined string
+  `char * $a;`
+  ``
+  `free($a);`
+  string
+
+string = string
+  `$a = strdup($b)`
+  string
+
+undefined = string
+  a string
+  a = b
+  ret = a
+
+main
+
+== compiled code
+char * _var_a;
+
+function a_eq_str(&_var_a, &_var_b) {
+  char *ret
+  _var_a = strdup(_var_b)
+  ret = strdup(_var_a)
+  return ret
+}
+a_eq_str
+free(_var_a);
