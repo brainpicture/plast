@@ -1,22 +1,5 @@
-string getType
-  ret = "string"
-
-string dump
-  this = this + "!"
-  this getType print
-  ("DUMP: " + this) print
-
+"std.plast"
 main
-  a = 20
-  a + " = 20" print
-  a > 10
-    wow = "33"
-    (wow getType) print
-    hello = 32
-    hello print
-    wow print
-    test = "TEST"
-    test = test + " 0"
-    "TEST" dump
-    "TEST " + test dump
-    test print
+  a = 2
+  r = (a == 2) ? "ok", "fail"
+  r print

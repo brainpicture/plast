@@ -1,12 +1,29 @@
+===fib example
+"std.plast"
+integer fib
+  this == 1 || this == 2
+    ret = 1
+  else
+    ret = (this - 1 fib) + (this - 2 fib)
+
+main
+  2 fib print
+
+=== sump example
+string getType
+  ret = "string"
+
 string dump
   this = this + "!"
-  "DUMP: " + this print
+  this getType print
+  ("DUMP: " + this) print
 
 main
   a = 20
   a + " = 20" print
   a > 10
     wow = "33"
+    (wow getType) print
     hello = 32
     hello print
     wow print
@@ -39,7 +56,7 @@ main
 // weight determined by position in sources
 
 string length
-  `sizeof $a` int
+  `sizeof $a` integer int
 
 string > int
   a length > b

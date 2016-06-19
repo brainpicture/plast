@@ -1,0 +1,10 @@
+"../std.plast"
+
+main
+  a = 2
+  b = 3
+  a,b = b,a
+  a,b == 3,2
+    "ok" print
+  else
+    "error" print

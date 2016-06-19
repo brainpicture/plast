@@ -1,11 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+
+bool condBool = true;
 
 char* _strFromInt(int a) {
-  int length = snprintf( NULL, 0, "%d", a );
+  int length = snprintf(NULL, 0, "%d", a);
   char* str = malloc( length + 1 );
   snprintf(str, length + 1, "%d", a);
+  return str;
+}
+
+char* _strFromFloat(float a) {
+  int length = snprintf( NULL, 0, "%g", a);
+  char* str = malloc( length + 1 );
+  snprintf(str, length + 1, "%g", a);
   return str;
 }
 
@@ -18,60 +28,30 @@ char* _strJoin(char *s1, char *s2) {
   memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
   return result;
 }
-
-char* _op_string_op_getType_op_undefined(char* *_this) {
-char* _ret;
-
-_ret = strdup("string");
-
-return _ret;
+char* ternarOp0(bool *a, char* b0, char* b1) {
+if (*a) {return b0;} else {return b1;}
 }
-void _op_string_op_dump_op_undefined(char* *_this) {
 
-*_this = strdup((_strJoin(*_this, "!")));
 
-_op_string_op_getType_op_undefined(_this);
 
-printf("%s\n", (_strJoin("DUMP: ", *_this)));
-
-}
-void _op_undefined_op_main_op_undefined() {
+void func_undefined_main_undefined() {
 int _a;
-char* _wow;
-int _hello;
-char* _test;
+char* _r;
 
-_a = 20;
+_a = 2;
 
-printf("%s\n", (_strJoin(_strFromInt(_a), " = 20")));
+char* __def0 = "ok";
+char* __def1 = "fail";
+bool __def2 = (_a == 2);
+_r = strdup(ternarOp0(&__def2, __def0, __def1));
 
-if (_a > 10) {_wow = strdup("33");
+printf("%s\n", _r);
 
-printf("%s\n", (_op_string_op_getType_op_undefined(&_wow)));
-
-_hello = 32;
-
-printf("%d\n", _hello);
-
-printf("%s\n", _wow);
-
-_test = strdup("TEST");
-
-_test = strdup((_strJoin(_test, " 0")));
-
-char* __def0 = "TEST";
-_op_string_op_dump_op_undefined(&__def0);
-
-char* __def1 = (_strJoin("TEST ", _test));
-_op_string_op_dump_op_undefined(&__def1);
-
-printf("%s\n", _test);
-};
 
 }
 
 
 int main() {
 
-_op_undefined_op_main_op_undefined();
+func_undefined_main_undefined();
 }

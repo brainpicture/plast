@@ -1,0 +1,214 @@
+// variable
+variable = string
+  `$this = strdup($arg)` string string
+
+variable = integer
+  `$this = $arg` integer integer
+
+variable = float
+  `$this = $arg` float float
+
+undefined else
+  `if (!condBool) {$block}`
+
+// string
+string print
+  `printf("%s\n", $this)` integer
+
+string = string
+  `$this = strdup($arg)` string
+
+string + string
+  `_strJoin($this, $arg)` string
+
+string + integer
+  `_strJoin($this, _strFromInt($arg))` string
+
+string + float
+  `_strJoin($this, _strFromFloat($arg))` string
+
+string getType
+  `"string"` string
+
+// integer
+integer print
+  `printf("%d\n", $this)` integer
+
+integer = integer
+  `$this = $arg` integer
+
+integer += integer
+  `$this += $arg` integer
+
+integer -= integer
+  `$this -= $arg` integer
+
+integer *= integer
+  `$this *= $arg` integer
+
+integer > integer
+  `($this > $arg)` bool
+  block
+    `condBool = ($this > $arg); if (condBool) {$block}` bool
+
+integer < integer
+  `($this < $arg)` bool
+  block
+    `condBool = ($this < $arg); if (condBool) {$block}` bool
+
+integer == integer
+  `($this == $arg)` bool
+  block
+    `condBool = ($this == $arg); if (condBool) {$block}` bool
+
+integer != integer
+  `($this != $arg)` bool
+  block
+    `condBool = ($this != $arg); if (condBool) {$block}` bool
+
+integer >: integer
+  `while ($this > $arg) {$block}` bool
+
+integer <: integer
+  `while ($this < $arg) {$block}` bool
+
+integer > float
+  `if ((float) $this > $arg) {$block}` bool
+
+integer < float
+  `if ((float) $this > $arg) {$block}` bool
+
+integer >: float
+  `while ((float) $this > $arg) {$block}` bool
+
+integer <: float
+  `while ((float) $this < $arg) {$block}` bool
+
+integer + string
+  `_strJoin(_strFromInt($this), $arg)` string
+
+integer + integer
+  `($this + $arg)` integer
+
+integer ++
+  `$this++` integer
+
+integer --
+  `$this--` integer
+
+integer + float
+  `((float) $this + $arg)` float
+
+integer - integer
+  `($this - $arg)` integer
+
+integer - float
+  `((float) $this - $arg)` float
+
+integer * integer
+  `($this * $arg)` integer
+
+integer / integer
+  `((float) $this / (float) $arg)` float
+
+integer getType
+  `"integer"` string
+
+// float
+float print
+  `printf("%g\n", $this)` integer
+
+float = float
+  `$this = $arg` float
+
+float += float
+  `$this += $arg` float
+
+float -= float
+  `$this -= $arg` float
+
+float *= float
+  `$this *= $arg` float
+
+float /= float
+  `$this /= $arg` float
+
+float /= integer
+  `$this /= (float) $arg` float
+
+float + float
+  `($this + $arg)` float
+
+float + integer
+  `($this + (float) $arg)` float
+
+float - float
+  `($this - $arg)` float
+
+float - integer
+  `($this - (float) $arg)` float
+
+float + string
+  `_strJoin(_strFromFloat($this), $arg)` string
+
+float * integer
+  `($this * (float) $arg)` float
+
+float getType
+  `"float"` string
+
+// bool
+bool && bool
+  `($this && $arg)` bool
+  block
+    `condBool = ($this && $arg); if (condBool) {$block}` bool
+
+bool || bool
+  `($this || $arg)` bool
+  block
+    `condBool = ($this || $arg); if (condBool) {$block}` bool
+
+bool ? struct
+  `$ternarOp(&$this, *$arg)` string
+
+
+// structs
+* , *
+  `&$this, &$arg` struct
+
+struct print
+  `$structPrint($this)` integer
+  //`printf("$printTypes(this)\n", $this)`
+
+struct = struct
+  `$structEq($this, *$arg)` struct
+
+struct == struct
+  `$structEqCheck($this, *$arg)` bool
+  block
+    `condBool = $structEqCheck($this, *$arg); if (condBool) {$block}` bool
+
+struct != struct
+  `$structNotEqCheck($this, *$arg)` bool
+  block
+    `condBool = $structNotEqCheck($this, *$arg); if (condBool) {$block}` bool
+
+struct > struct
+  `$structMoreCheck($this, *$arg)` bool
+  block
+    `condBool = $structMoreCheck($this, *$arg); if (condBool) {$block}` bool
+
+struct >= struct
+  `$structMoreEqCheck($this, *$arg)` bool
+  block
+    `condBool = $structMoreEqCheck($this, *$arg); if (condBool) {$block}` bool
+
+struct < struct
+  `$structLessCheck($this, *$arg)` bool
+  block
+    `condBool = $structLessCheck($this, *$arg); if (condBool) {$block}` bool
+
+struct <= struct
+  `$structLessEqCheck($this, *$arg)` bool
+  block
+    `condBool = $structLessEqCheck($this, *$arg); if (condBool) {$block}` bool

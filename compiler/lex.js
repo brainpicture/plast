@@ -7,5 +7,6 @@ exports.ARR = 4
 
 exports.THIS = 'this'
 exports.RET = 'ret'
+exports.ARG = 'arg'
 
 exports.SCOPE_ARG = 1;
