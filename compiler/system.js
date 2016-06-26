@@ -2,7 +2,9 @@
 var Variables = {}
 var Functions = {}
 var FuncCode = ''
+var StructCode = ''
 var FuncNum = 0
+var CtxNum = 0
 var BlockNum = 0
 var Precodes = []
 var VariableIndex = 0
@@ -46,13 +48,17 @@ exports.newVariable = function() {
 }
 
 exports.getDefines = function() {
-  var precode = '';
+  var ctxName = 'ctx'+CtxNum++
+  var struct = 'struct '+ctxName+' {\n';
   for (var name in Variables) {
     var [type, scope] = Variables[name]
     if (!scope) {
-      precode += types.toNative(type, name)+";\n"
+      struct += types.toNative(type, name)+";\n"
     }
   }
+  struct += '}\n'
+  StructCode += struct
+  precode = 'struct '+ctxName+ 'ctx;'
   precode += Precodes.join("\n")
   return precode
 }
@@ -147,6 +153,7 @@ char* _strJoin(char *s1, char *s2) {
   memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
   return result;
 }
+${StructCode}
 ${FuncCode}
 
 ${code}
