@@ -3,6 +3,7 @@ var Variables = {}
 var Functions = {}
 var FuncCode = ''
 var FuncNum = 0
+var BlockNum = 0
 var Precodes = []
 var VariableIndex = 0
 var types = require('./types.js')
@@ -56,9 +57,18 @@ exports.getDefines = function() {
   return precode
 }
 
-exports.getArguments = function(link, typeA, typeB) {
+exports.getArguments = function(link, typeA, typeB, operator) {
   var args = []
   var defArgs = {}
+  if (operator && operator.wrapBlock) {
+    if (link) {
+      args.push('&$block')
+      args.push('0') // TODO 1
+    } else {
+      args.push('block blockCb')
+      args.push('int blockCtxId')
+    }
+  }
   defArgs[lex.THIS] = ['$this', typeA]
   defArgs[lex.ARG] = ['$arg', typeB]
   for(var name in defArgs) {
@@ -112,6 +122,7 @@ exports.main = function(precode, code, mainFunc) {
 #include <stdbool.h>
 
 bool condBool = true;
+typedef void (*block)(int ctx);
 
 char* _strFromInt(int a) {
   int length = snprintf(NULL, 0, "%d", a);
@@ -152,6 +163,13 @@ exports.func = function(funcName, code, args, retType) {
   return `${type} ${funcName}(${args}) {
 ${code}
 }`
+}
+
+exports.wrapBlock = function(code) {
+  var blockName = 'block'+BlockNum++
+
+  FuncCode += `void ${blockName}(int ctxId) {${code}}\n\n`
+  return blockName
 }
 
 var funcs = {}
@@ -270,6 +288,9 @@ funcs.ternarOp = function(funcName, typeA, typeB, err) {
   var args = []
   if (typeB.length != 2) {
     err('right side contain '+typeB.length+' elements, 2 expected')
+  }
+  if (typeB[0] != typeB[1]) {
+    err('right side should have same type, '+typeB[0]+' and '+typeB[1]+' passed')
   }
   var retType = types.getNativeType(typeB[0])
   args.push(types.getNativeType(typeA) + ' *a')

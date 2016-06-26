@@ -18,6 +18,9 @@ string print
 string = string
   `$this = strdup($arg)` string
 
+string += string
+  `$this = _strJoin($this, $arg)` string
+
 string + string
   `_strJoin($this, $arg)` string
 
@@ -169,7 +172,7 @@ bool || bool
     `condBool = ($this || $arg); if (condBool) {$block}` bool
 
 bool ? struct
-  `$ternarOp(&$this, *$arg)` string
+  `$ternarOp(&$this, *$arg)`
 
 
 // structs

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 bool condBool = true;
+typedef void (*block)(int ctx);
 
 char* _strFromInt(int a) {
   int length = snprintf(NULL, 0, "%d", a);
@@ -28,24 +29,30 @@ char* _strJoin(char *s1, char *s2) {
   memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
   return result;
 }
-char* ternarOp0(bool *a, char* b0, char* b1) {
-if (*a) {return b0;} else {return b1;}
+void block0(int ctxId) {printf("%s\n", "wow");
+
 }
 
 
 
+void func_integer_repeat_undefined(block blockCb, int blockCtxId, int *_this) {
+int _a;
+
+_a = *_this;
+
+while (_a > 0) {_a--;
+
+blockCb(blockCtxId);
+};
+
+
+}
 void func_undefined_main_undefined() {
 int _a;
-char* _r;
 
-_a = 2;
+_a = 3;
 
-char* __def0 = "ok";
-char* __def1 = "fail";
-bool __def2 = (_a == 2);
-_r = strdup(ternarOp0(&__def2, __def0, __def1));
-
-printf("%s\n", _r);
+func_integer_repeat_undefined(block0, 0, &_a);
 
 
 }

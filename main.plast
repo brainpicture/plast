@@ -1,5 +1,12 @@
 "std.plast"
+
+integer repeat
+  a = this
+  a >: 0
+    a--
+    block
+
 main
-  a = 2
-  r = (a == 2) ? "ok", "fail"
-  r print
+  a = 3
+  a repeat
+    "wow" print
