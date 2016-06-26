@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 bool condBool = true;
-typedef void (*block)(int ctx);
+typedef void (*block)(void* ctx);
 
 char* _strFromInt(int a) {
   int length = snprintf(NULL, 0, "%d", a);
@@ -14,8 +14,8 @@ char* _strFromInt(int a) {
 }
 
 char* _strFromFloat(float a) {
-  int length = snprintf( NULL, 0, "%g", a);
-  char* str = malloc( length + 1 );
+  int length = snprintf(NULL, 0, "%g", a);
+  char* str = malloc(length + 1 );
   snprintf(str, length + 1, "%g", a);
   return str;
 }
@@ -29,30 +29,39 @@ char* _strJoin(char *s1, char *s2) {
   memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
   return result;
 }
-void block0(int ctxId) {printf("%s\n", "wow");
+struct ctx0 {
+};
+struct ctx1 {
+int b;
+};
+
+void block0(struct ctx1* ctx) {
+ctx->b += 1;
+
 
 }
 
 
 
-void func_integer_repeat_undefined(block blockCb, int blockCtxId, int *_this) {
-int _a;
+void func_integer_repeat_undefined(block blockCb, void* blockCtx, int *this) {
+struct ctx0 ctx;
+while (*this > 0) {*this -= 1;
 
-_a = *_this;
-
-while (_a > 0) {_a--;
-
-blockCb(blockCtxId);
+blockCb(blockCtx);
 };
 
 
 }
 void func_undefined_main_undefined() {
-int _a;
+struct ctx1 ctx;
+ctx.b = 0;
 
-_a = 3;
+int def0 = 3;
+func_integer_repeat_undefined((void*) block0, &ctx, &def0);
 
-func_integer_repeat_undefined(block0, 0, &_a);
+condBool = (ctx.b == 3); if (condBool) {printf("%s\n", "ok");
+
+};
 
 
 }

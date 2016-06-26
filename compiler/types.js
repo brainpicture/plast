@@ -18,7 +18,7 @@ exports.getNativeType = function(type) {
   return ''
 }
 exports.toNative = function(type, varName, pointer) {
-  varName = '_'+varName
+  varName = varName
   if (pointer) {
     varName = '*'+varName
   }

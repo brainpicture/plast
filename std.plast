@@ -21,6 +21,9 @@ string = string
 string += string
   `$this = _strJoin($this, $arg)` string
 
+string += integer
+  `$this = _strJoin($this, _strFromInt($arg))` string
+
 string + string
   `_strJoin($this, $arg)` string
 
@@ -94,10 +97,10 @@ integer + integer
   `($this + $arg)` integer
 
 integer ++
-  `$this++` integer
+  `$this += 1` integer
 
 integer --
-  `$this--` integer
+  `$this -= 1` integer
 
 integer + float
   `((float) $this + $arg)` float

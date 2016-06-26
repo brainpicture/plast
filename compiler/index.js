@@ -70,7 +70,7 @@ function prepareVar(a) {
   if (a) {
     var [type, lexType] = types.getType(a)
     if (lexType == lex.VAR) {
-      a = system.wrapVariable(a)
+      a = system.wrapVariable(a, false)
     }
     return [type, a]
   }
@@ -319,8 +319,10 @@ function buildBlocks(structure, level) {
         }
         CurOperator = setOperator(typeA, op, typeB, options, lineN)
 
+        // sould be before
+        options.code = funcName+'('+system.getArguments(true, typeA, typeB, CurOperator)+')'
         var block = buildBlocks(structure, 1)
-
+        // TMP
         options.code = funcName+'('+system.getArguments(true, typeA, typeB, CurOperator)+')'
 
         var thisType = system.getType(lex.THIS)
@@ -405,7 +407,7 @@ function compileTriple(triple, inner, level, ln) {
   var [a, op, b, codeBlock] = triple
   if (!inner && a == 'undefined' && op == 'block') {
     CurOperator.wrapBlock = true
-    var code = 'blockCb(blockCtxId);'
+    var code = 'blockCb(blockCtx);'
     return ['undefined', code, '', []]
   }
   var precode = ''
@@ -443,6 +445,9 @@ function compileTriple(triple, inner, level, ln) {
     var setType = operator.block.setType
   } else {
     var code = operator.code
+    if (!code) {
+      console.log(operator);
+    }
     var type = operator.type
     var setType = operator.setType
   }
@@ -504,7 +509,6 @@ function compileTriple(triple, inner, level, ln) {
       if (codeBlock) {
         err('codeblock in inner code', ln);
       }
-      code = code
     } else {
       code += ";\n"
     }
@@ -559,7 +563,7 @@ function compileFile(file) {
 }
 
 
-var output = compileFile('./main.plast')
+var output = compileFile(process.argv[2])
 if (!MainFunc) {
   err('No main operator', 0)
 }

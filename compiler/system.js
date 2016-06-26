@@ -28,23 +28,23 @@ exports.setType = function(name, type, scope) {
 }
 
 exports.wrapVariable = function(name, simple) {
-  var retName = '_'+name
   if (simple) {
-    return retName
+    return name
   }
+  var c = 'ctx.'
   var info = Variables[name]
   if (!info) {
-    return retName
+    return c+name
   }
   var [type, scope] = info
   if (scope == lex.SCOPE_ARG) {
-    retName = '*'+retName
+    return '*'+name
   }
-  return retName
+  return c+name
 }
 
 exports.newVariable = function() {
-  return '_def'+VariableIndex++
+  return 'def'+VariableIndex++
 }
 
 exports.getDefines = function() {
@@ -56,9 +56,9 @@ exports.getDefines = function() {
       struct += types.toNative(type, name)+";\n"
     }
   }
-  struct += '}\n'
+  struct += '};\n'
   StructCode += struct
-  precode = 'struct '+ctxName+ 'ctx;'
+  var precode = 'struct '+ctxName+ ' ctx;'
   precode += Precodes.join("\n")
   return precode
 }
@@ -68,11 +68,11 @@ exports.getArguments = function(link, typeA, typeB, operator) {
   var defArgs = {}
   if (operator && operator.wrapBlock) {
     if (link) {
-      args.push('&$block')
-      args.push('0') // TODO 1
+      args.push('(void*) &$block')
+      args.push('&ctx') // TODO 1
     } else {
       args.push('block blockCb')
-      args.push('int blockCtxId')
+      args.push('void* blockCtx')
     }
   }
   defArgs[lex.THIS] = ['$this', typeA]
@@ -128,7 +128,7 @@ exports.main = function(precode, code, mainFunc) {
 #include <stdbool.h>
 
 bool condBool = true;
-typedef void (*block)(int ctx);
+typedef void (*block)(void* ctx);
 
 char* _strFromInt(int a) {
   int length = snprintf(NULL, 0, "%d", a);
@@ -138,8 +138,8 @@ char* _strFromInt(int a) {
 }
 
 char* _strFromFloat(float a) {
-  int length = snprintf( NULL, 0, "%g", a);
-  char* str = malloc( length + 1 );
+  int length = snprintf(NULL, 0, "%g", a);
+  char* str = malloc(length + 1 );
   snprintf(str, length + 1, "%g", a);
   return str;
 }
@@ -174,8 +174,11 @@ ${code}
 
 exports.wrapBlock = function(code) {
   var blockName = 'block'+BlockNum++
+  code = code.replace(/ctx\./g, 'ctx->')
 
-  FuncCode += `void ${blockName}(int ctxId) {${code}}\n\n`
+FuncCode += `void ${blockName}(struct ctx1* ctx) {
+${code}
+}\n\n`
   return blockName
 }
 
