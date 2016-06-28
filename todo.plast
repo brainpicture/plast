@@ -1,3 +1,16 @@
+==recursove example
+integer plus3
+  ret = this plus2 + 1
+
+integer plus2
+  this < 10
+    ret = this plus3 + 2
+
+main
+  b = 0
+  b plus2 print
+
+
 ===fib example
 "std.plast"
 integer fib

@@ -22,4 +22,7 @@ test:
 	@node ./compiler/index.js tests/4.plast
 	@gcc main.c -o main.o
 	@./main.o
+	@node ./compiler/index.js tests/5.plast
+	@gcc main.c -o main.o
+	@./main.o
 

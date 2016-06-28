@@ -1,4 +1,4 @@
-"../std.plast"
+"std.plast"
 
 main
   a = 2

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 bool condBool = true;
 typedef void (*block)(void* ctx);
@@ -30,41 +31,58 @@ char* _strJoin(char *s1, char *s2) {
   return result;
 }
 struct ctx0 {
+int ret;
 };
+int func_integer_plus3_undefined(int *this);
 struct ctx1 {
+int ret;
+};
+int func_integer_plus2_undefined(int *this);
+struct ctx2 {
 int b;
 };
+void func_undefined_main_undefined();
 
-void block0(struct ctx1* ctx) {
-ctx->b += 1;
+int func_integer_plus3_undefined(int *this) {
+struct ctx0 ctx;
+int def0 = (*this + 1);
+ctx.ret = func_integer_plus2_undefined(&def0);
 
 
+return ctx.ret;
 }
 
+int func_integer_plus2_undefined(int *this) {
+struct ctx1 ctx;
+condBool = (*this > 10); if (condBool) {ctx.ret = *this;
 
+};
 
-void func_integer_repeat_undefined(block blockCb, void* blockCtx, int *this) {
-struct ctx0 ctx;
-while (*this > 0) {*this -= 1;
+if (!condBool) {ctx.ret = func_integer_plus3_undefined(this);
 
-blockCb(blockCtx);
 };
 
 
+return ctx.ret;
 }
+
 void func_undefined_main_undefined() {
-struct ctx1 ctx;
+struct ctx2 ctx;
 ctx.b = 0;
 
-int def0 = 3;
-func_integer_repeat_undefined((void*) block0, &ctx, &def0);
+condBool = (func_integer_plus2_undefined(&ctx.b) == 11); if (condBool) {printf("%s\n", "ok");
 
-condBool = (ctx.b == 3); if (condBool) {printf("%s\n", "ok");
+};
+
+if (!condBool) {printf("%s\n", "fail");
 
 };
 
 
 }
+
+
+
 
 
 int main() {

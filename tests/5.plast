@@ -4,7 +4,10 @@ integer plus3
   ret = (this + 1) plus2
 
 integer plus2
-  ret = this plus3
+  this > 10
+    ret = this
+  else
+    ret = this plus3
 
 main
   b = 0

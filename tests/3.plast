@@ -1,4 +1,4 @@
-"../std.plast"
+"std.plast"
 
 integer fib
   this == 1 || this == 2

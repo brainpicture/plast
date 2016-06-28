@@ -1,4 +1,4 @@
-"../std.plast"
+"std.plast"
 
 integer repeat
   this >: 0

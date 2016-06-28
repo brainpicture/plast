@@ -8,6 +8,7 @@ var CtxNum = 0
 var BlockNum = 0
 var Precodes = []
 var VariableIndex = 0
+var Context = []
 var types = require('./types.js')
 var lex = require('./lex.js')
 
@@ -63,7 +64,7 @@ exports.getDefines = function() {
   return precode
 }
 
-exports.getArguments = function(link, typeA, typeB, operator) {
+exports.getArguments = function(link, operator) {
   var args = []
   var defArgs = {}
   if (operator && operator.wrapBlock) {
@@ -75,8 +76,8 @@ exports.getArguments = function(link, typeA, typeB, operator) {
       args.push('void* blockCtx')
     }
   }
-  defArgs[lex.THIS] = ['$this', typeA]
-  defArgs[lex.ARG] = ['$arg', typeB]
+  defArgs[lex.THIS] = ['$this', operator.thisType]
+  defArgs[lex.ARG] = ['$arg', operator.argType]
   for(var name in defArgs) {
     //var val = Variables[name]
     //if (val) {
@@ -95,10 +96,19 @@ exports.getArguments = function(link, typeA, typeB, operator) {
   return args.join(', ')
 }
 
-exports.clear = function() {
+exports.contextPush = function(operator) {
+  Context.push([operator, Variables, Precodes, VariableIndex])
   Variables = {}
   Precodes = []
   VariableIndex = 0
+}
+
+exports.contextPop = function() {
+  var context = Context.pop()
+  Variables = context[1]
+  Precodes = context[2]
+  VariableIndex = context[3]
+  return context[0]
 }
 
 exports.precode = function(code) {
@@ -117,6 +127,8 @@ exports.getWeight = function(word) {
     return 4
   } else if (word.match(/^[\*\/]$/)) {
     return 5
+  } else if (word.match(/^([\^\|&]|<<|>>)$/)) {
+    return 6
   }
   return 0
 }
@@ -126,6 +138,7 @@ exports.main = function(precode, code, mainFunc) {
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 bool condBool = true;
 typedef void (*block)(void* ctx);
@@ -167,9 +180,10 @@ ${mainFunc}();
 exports.func = function(funcName, code, args, retType) {
   var nativeType = types.getNativeType(retType)
   var type = (nativeType || 'void')
-  return `${type} ${funcName}(${args}) {
+StructCode += `${type} ${funcName}(${args});\n`
+FuncCode += `${type} ${funcName}(${args}) {
 ${code}
-}`
+}\n\n`
 }
 
 exports.wrapBlock = function(code) {

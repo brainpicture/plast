@@ -117,6 +117,30 @@ integer * integer
 integer / integer
   `((float) $this / (float) $arg)` float
 
+integer / float
+  `((float) $this / $arg)` float
+
+integer ^ integer
+  `($this ^ $arg)` integer
+
+integer & integer
+  `($this & $arg)` integer
+
+integer | integer
+  `($this | $arg)` integer
+
+integer >> integer
+  `($this >> $arg)` integer
+
+integer << integer
+  `($this << $arg)` integer
+
+integer pow integer
+  `(int)pow($this, $arg)` integer
+
+integer pow float
+  `(float)pow($this, $arg)` float
+
 integer getType
   `"integer"` string
 
@@ -159,6 +183,21 @@ float + string
 
 float * integer
   `($this * (float) $arg)` float
+
+float * float
+  `($this * $arg)` float
+
+float / float
+  `($this / (float)$arg)` float
+
+float / integer
+  `($this / $arg)` float
+
+float pow integer
+  `(float)pow($this, $arg)` float
+
+float pow float
+  `(float)pow($this, $arg)` float
 
 float getType
   `"float"` string
