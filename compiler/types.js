@@ -14,9 +14,15 @@ exports.getNativeType = function(type) {
       return 'float'
     case 'bool':
       return 'bool'
+    case 'array_integer':
+      system.addGeneric('array_integer')
+      return 'array_integer'
+    case 'array_string':
+      return 'char**'
   }
   return ''
 }
+
 exports.toNative = function(type, varName, pointer) {
   varName = varName
   if (pointer) {

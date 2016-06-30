@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include "lib/klib/kvec.h"
 
 bool condBool = true;
 typedef void (*block)(void* ctx);
@@ -30,53 +31,33 @@ char* _strJoin(char *s1, char *s2) {
   memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
   return result;
 }
+typedef kvec_t(int) array_integer;
 struct ctx0 {
-int ret;
-};
-int func_integer_plus3_undefined(int *this);
-struct ctx1 {
-int ret;
-};
-int func_integer_plus2_undefined(int *this);
-struct ctx2 {
-int b;
+array_integer a;
 };
 void func_undefined_main_undefined();
 
-int func_integer_plus3_undefined(int *this) {
-struct ctx0 ctx;
-int def0 = (*this + 1);
-ctx.ret = func_integer_plus2_undefined(&def0);
-
-
-return ctx.ret;
-}
-
-int func_integer_plus2_undefined(int *this) {
-struct ctx1 ctx;
-condBool = (*this > 10); if (condBool) {ctx.ret = *this;
-
-};
-
-if (!condBool) {ctx.ret = func_integer_plus3_undefined(this);
-
-};
-
-
-return ctx.ret;
+array_integer structToArray0(int n0, int n1, int n2, int n3, int n4) {
+ array_integer ret;
+ kv_init(ret);
+ kv_push(int, ret, n0);
+kv_push(int, ret, n1);
+kv_push(int, ret, n2);
+kv_push(int, ret, n3);
+kv_push(int, ret, n4);
+ return ret;
 }
 
 void func_undefined_main_undefined() {
-struct ctx2 ctx;
-ctx.b = 0;
+struct ctx0 ctx;
+int def0 = 1;
+int def1 = 2;
+int def2 = 3;
+int def3 = 32;
+int def4 = 23;
+ctx.a = structToArray0(def0, def1, def2, def3, def4);
 
-condBool = (func_integer_plus2_undefined(&ctx.b) == 11); if (condBool) {printf("%s\n", "ok");
-
-};
-
-if (!condBool) {printf("%s\n", "fail");
-
-};
+{int i; for(;i<4;i++) printf("%d ", ctx.a[i]); printf("%d\n", ctx.a[i]);};
 
 
 }

@@ -9,6 +9,7 @@ var BlockNum = 0
 var Precodes = []
 var VariableIndex = 0
 var Context = []
+var Generics = {}
 var types = require('./types.js')
 var lex = require('./lex.js')
 
@@ -133,12 +134,24 @@ exports.getWeight = function(word) {
   return 0
 }
 
+exports.addGeneric = function(type) {
+  var [genType, fullType] = type.split('_')
+  if (!Generics[type]) {
+    Generics[type] = true;
+    if (genType == 'array') {
+      var typeNative = types.getNativeType(fullType)
+      StructCode += 'typedef kvec_t('+typeNative+') '+type+';\n'
+    }
+  }
+}
+
 exports.main = function(precode, code, mainFunc) {
   return `#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include "lib/klib/kvec.h"
 
 bool condBool = true;
 typedef void (*block)(void* ctx);
@@ -221,7 +234,7 @@ funcs.structPrint = function(funcName, typeInfo) {
     printOpts = printOpts.join(', ')
 return [`int ${funcName}(${args}) {
 return printf("${printOpts}\\n", ${params});
-}`, 'int']
+}`, 'integer']
 }
 
 funcs.structEq = function(funcName, typeA, typeB, err) {
@@ -306,6 +319,33 @@ funcs.structLessCheck = function(funcName, typeA, typeB, err) {
 }
 funcs.structLessEqCheck = function(funcName, typeA, typeB, err) {
   return structCheck('>', ['integer', 'string'], funcName, typeA, typeB, err)
+}
+
+funcs.structToArray = function(funcName, thisType, argType, err) {
+    var args = [];
+    var allType = false
+    var len = thisType.length
+    var retLines = []
+
+    for(var i in thisType) {
+      var type = thisType[i]
+      if (allType !== false && type != allType) {
+        err('attempt to init array with different types '+type+' and '+allType+', element #'+(parseInt(i)+1))
+      }
+      allType = type
+      var varName = 'n'+i
+      var typeNative = types.getNativeType(type)
+      args.push(typeNative + ' ' + varName)
+      retLines.push('kv_push('+typeNative+', ret, n'+i+');')
+    }
+    args = args.join(', ')
+    retLines = retLines.join("\n")
+return [`array_${allType} ${funcName}(${args}) {
+ array_${allType} ret;
+ kv_init(ret);
+ ${retLines}
+ return ret;
+}`, 'array_'+allType]
 }
 
 funcs.ternarOp = function(funcName, typeA, typeB, err) {

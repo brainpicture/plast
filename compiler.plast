@@ -1,0 +1,27 @@
+string parseWords
+  ret = this trim " " split "[\s]+"
+
+operator
+  this =
+    lines: [],
+    thisType: "undefined",
+    op: "undefined",
+    argType: "undefined"
+
+operator init string
+  this.thisType, this.op, this.argType = arg parseWords
+
+operator push string
+  this.lines push arg
+
+operator compile
+
+main
+  line = arg[0] readFile eachLine
+    level = line match "^([ ]+)" [1] len
+    level == 0
+      operator compile
+      operator init line
+    else
+      operator push line
+

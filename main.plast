@@ -1,14 +1,5 @@
 "std.plast"
 
-integer plus3
-  ret = (this + 1) plus2
-
-integer plus2
-  ret = this plus3
-
 main
-  b = 0
-  b plus2 == 11
-    "ok" print
-  else
-    "fail" print
+  a = [1,2,3,32,23]
+  a print

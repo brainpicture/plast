@@ -1,3 +1,14 @@
+==arrays
+main
+  a = []
+  a[23] = "wow"
+  a.23 = "wow" //error but ok for hashmaps
+
+  a push "wow"
+  a pop print
+  a shift "wow"
+  a unshift print
+
 ==recursove example
 integer plus3
   ret = this plus2 + 1

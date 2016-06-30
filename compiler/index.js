@@ -42,15 +42,17 @@ function prepareWords(words, lineN, inner, file) {
   while(words.length) {
     var word = words.shift()
     if (word == '(') {
-      res.push(prepareWords(words, lineN, true))
-    } else if (word == ')') {
+      res.push(prepareWords(words, lineN, ')'))
+    } else if (word == '[') {
+      res.push([prepareWords(words, lineN, ']'), 'array'])
+    } else if (word == inner) {
       return res
     } else {
       res.push(word)
     }
   }
   if (inner) {
-    err("( not closed", lineN, file)
+    err(inner+' expected', lineN, file)
   }
   return res
 }
@@ -59,7 +61,7 @@ function getTokens(line, lineN, file) {
   if (!line) {
     return false
   }
-  var words = line.match(/([0-9]+[0-9\.]+|[a-zA-Z0-9_]+[a-zA-Z0-9_]*|"[^"]*"|'[^']*'|`[^`]+`|[\+\-\\*\/=\^&!><:;,\|\?~]+|[\(\)])/g)
+  var words = line.match(/([0-9]+[0-9\.]+|[a-zA-Z0-9_]+[a-zA-Z0-9_]*|"[^"]*"|'[^']*'|`[^`]+`|[\+\-\\*\/=\^&!><:;,\|\?~]+|[\(\)\[\]])/g)
   var words = prepareWords(words, lineN, false, file)
   var tokens = parseWords(words, lineN)
   return tokens
@@ -184,7 +186,6 @@ function parseFile(tokens, lineN) {
   fileName = fileName[1] || fileName[2]
 
   if (CurOperator) {
-    console.log(CurOperator, CurOperator.file);
     var d = path.dirname(CurOperator.file)
   } else {
     var d = '.'
@@ -434,8 +435,6 @@ function compileTriple(triple, inner, level, ln) {
   if (operator.type == 'undefined') {
     if (operator.state == 1) {
       err('operator ret type could not determined before recursion called from line '+ln, operator.lineN)
-    } else {
-      err('operator ret not defined', operator.lineN)
     }
   }
 

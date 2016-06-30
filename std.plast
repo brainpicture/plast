@@ -257,3 +257,18 @@ struct <= struct
   `$structLessEqCheck($this, *$arg)` bool
   block
     `condBool = $structLessEqCheck($this, *$arg); if (condBool) {$block}` bool
+
+struct array
+  `$structToArray(*$this)`
+
+// array_integer
+
+variable = array_integer
+  `$this = $arg` array_integer array_integer
+
+variable = array_string
+  `$this = $arg` array_string array_string
+
+array_integer print
+  this each item
+    item print
