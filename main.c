@@ -44,7 +44,7 @@ void func_undefined_main_undefined();
 
 void func_undefined_main_undefined() {
 struct ctx0 ctx;
-ctx.user = (typeof(ctx.user)){.id = 66748, .name = "oleg"};
+ctx.user = *.id = 66748, .name = "oleg";
 printf("%d\n", ctx.user.id);
 
 }
