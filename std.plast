@@ -267,7 +267,7 @@ struct array
   `$structToArray(*$this)`
 
 variable = struct
-  `$this = (typeof($this)){$arg}` struct struct
+  `$this = *&$arg` struct struct
 
 struct . *
   `$this.$argName` *
