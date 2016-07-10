@@ -1,5 +1,5 @@
 "std.plast"
 
 main
-  a = [1,2,3,32,23]
-  a print
+  user = id: 66748, name: "oleg"
+  user.id print

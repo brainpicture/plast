@@ -4,7 +4,7 @@ var num = 0;
 var system = require('./system.js')
 var lex = require('./lex.js')
 
-exports.getNativeType = function(type) {
+exports.getNativeType = function(type, typeInfo) {
   switch(type) {
     case 'string':
       return 'char*'
@@ -19,16 +19,18 @@ exports.getNativeType = function(type) {
       return 'array_integer'
     case 'array_string':
       return 'char**'
+    case 'struct':
+      return system.getStruct(typeInfo)
   }
   return ''
 }
 
-exports.toNative = function(type, varName, pointer) {
+exports.toNative = function(type, typeInfo, varName, pointer) {
   varName = varName
   if (pointer) {
     varName = '*'+varName
   }
-  var nativeType = exports.getNativeType(type)
+  var nativeType = exports.getNativeType(type, typeInfo)
   if (nativeType) {
     return nativeType+' '+varName
   }

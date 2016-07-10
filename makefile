@@ -1,6 +1,6 @@
 all:
 	@node ./compiler/index.js main.plast
-	@gcc main.c -o main.o
+	@gcc -o main.o main.c
 	@echo "--------"
 	@./main.o
 compile:
@@ -23,6 +23,9 @@ test:
 	@gcc main.c -o main.o
 	@./main.o
 	@node ./compiler/index.js tests/5.plast
+	@gcc main.c -o main.o
+	@./main.o
+	@node ./compiler/index.js tests/6.plast
 	@gcc main.c -o main.o
 	@./main.o
 

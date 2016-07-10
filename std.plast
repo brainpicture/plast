@@ -36,6 +36,11 @@ string + float
 string getType
   `"string"` string
 
+string == string
+  `(strcmp($this, $arg) == 0)` bool
+  block
+    `condBool = (strcmp($this, $arg) == 0); if (condBool) {$block}` bool
+
 // integer
 integer print
   `printf("%d\n", $this)` integer
@@ -261,6 +266,16 @@ struct <= struct
 struct array
   `$structToArray(*$this)`
 
+variable = struct
+  `$this = (typeof($this)){$arg}` struct struct
+
+struct . *
+  `$this.$argName` *
+
+// superstructs
+* : *
+  `.$thisName = $arg` struct
+
 // array_integer
 
 variable = array_integer
@@ -269,6 +284,20 @@ variable = array_integer
 variable = array_string
   `$this = $arg` array_string array_string
 
+array_integer each variable
+  `for(int i = 0; i < kv_size($this); i++) {$arg = kv_a($thisSubType, $this, i); $block}` undefined integer
+
+array_integer push integer
+  `kv_push(int, $this, $arg)`
+
+array_integer pop
+  `kv_pop($this)` integer
+
 array_integer print
+  out = ""
   this each item
-    item print
+    out == ""
+      out += item
+    else
+      out += ", " + item
+  out print

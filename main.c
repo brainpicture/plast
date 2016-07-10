@@ -31,34 +31,21 @@ char* _strJoin(char *s1, char *s2) {
   memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
   return result;
 }
-typedef kvec_t(int) array_integer;
-struct ctx0 {
-array_integer a;
-};
+
+typedef struct ctx1 {
+int id;
+char* name;
+} ctx1;
+typedef struct ctx0 {
+ctx1 user;
+} ctx0;
 void func_undefined_main_undefined();
 
-array_integer structToArray0(int n0, int n1, int n2, int n3, int n4) {
- array_integer ret;
- kv_init(ret);
- kv_push(int, ret, n0);
-kv_push(int, ret, n1);
-kv_push(int, ret, n2);
-kv_push(int, ret, n3);
-kv_push(int, ret, n4);
- return ret;
-}
 
 void func_undefined_main_undefined() {
 struct ctx0 ctx;
-int def0 = 1;
-int def1 = 2;
-int def2 = 3;
-int def3 = 32;
-int def4 = 23;
-ctx.a = structToArray0(def0, def1, def2, def3, def4);
-
-{int i; for(;i<4;i++) printf("%d ", ctx.a[i]); printf("%d\n", ctx.a[i]);};
-
+ctx.user = (typeof(ctx.user)){.id = 66748, .name = "oleg"};
+printf("%d\n", ctx.user.id);
 
 }
 

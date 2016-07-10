@@ -21,11 +21,19 @@ exports.getType = function(name) {
   }
 }
 
-exports.setType = function(name, type, scope) {
+exports.getTypeInfo = function(name) {
+  if (Variables[name]) {
+    return Variables[name][1];
+  } else {
+    return []
+  }
+}
+
+exports.setType = function(name, type, typeInfo, scope) {
   if (Variables[name]) { // could not change scope
     Variables[name][0] = type
   } else {
-    Variables[name] = [type, scope || 0]
+    Variables[name] = [type, typeInfo, scope || 0]
   }
 }
 
@@ -38,7 +46,7 @@ exports.wrapVariable = function(name, simple) {
   if (!info) {
     return c+name
   }
-  var [type, scope] = info
+  var [type, typeInfo, scope] = info
   if (scope == lex.SCOPE_ARG) {
     return '*'+name
   }
@@ -49,16 +57,42 @@ exports.newVariable = function() {
   return 'def'+VariableIndex++
 }
 
-exports.getDefines = function() {
+exports.getStruct = function(typeInfo) {
   var ctxName = 'ctx'+CtxNum++
-  var struct = 'struct '+ctxName+' {\n';
-  for (var name in Variables) {
-    var [type, scope] = Variables[name]
-    if (!scope) {
-      struct += types.toNative(type, name)+";\n"
+  var struct = 'typedef struct '+ctxName+' {\n';
+  var elNum = 0;
+  for(var i in typeInfo) {
+    var type = typeInfo[i]
+    if (typeof type === 'object') {
+      for(var name in type) {
+    console.log('type', name, type[name]);
+        if (Array.isArray(type[name])) {
+          struct += types.toNative('struct', type[name], name)+";\n"
+        } else {
+          console.log('gen type', type[name], name);
+          struct += types.toNative(type[name], false, name)+";\n"
+        }
+      }
+    } else {
+      struct += types.toNative(type, false, 'n'+elNum++)+";\n"
     }
   }
-  struct += '};\n'
+  struct += '} '+ctxName+';\n'
+  StructCode += struct
+  return ctxName
+}
+
+exports.getDefines = function() {
+  var ctxName = 'ctx'+CtxNum++
+  var struct = 'typedef struct '+ctxName+' {\n';
+  for (var name in Variables) {
+    var [type, typeInfo, scope] = Variables[name]
+    console.log('get def', type, typeInfo, scope);
+    if (!scope) {
+      struct += types.toNative(type, typeInfo, name)+";\n"
+    }
+  }
+  struct += '} '+ctxName+';\n'
   StructCode += struct
   var precode = 'struct '+ctxName+ ' ctx;'
   precode += Precodes.join("\n")
@@ -88,7 +122,7 @@ exports.getArguments = function(link, operator) {
         args.push('&'+replName)
       }
     } else {
-      var typeCode = types.toNative(type, name, true)
+      var typeCode = types.toNative(type, false, name, true)
       if (typeCode) {
         args.push(typeCode)
       }
@@ -124,12 +158,14 @@ exports.getWeight = function(word) {
     return 2
   } else if (word.match(/^,/)) {
     return 3
-  } else if (word.match(/^[\+\-]$/)) {
+  } else if (word.match(/^:/)) {
     return 4
-  } else if (word.match(/^[\*\/]$/)) {
+  } else if (word.match(/^[\+\-]$/)) {
     return 5
+  } else if (word.match(/^[\*\/]$/)) {
+    return 7
   } else if (word.match(/^([\^\|&]|<<|>>)$/)) {
-    return 6
+    return 8
   }
   return 0
 }
@@ -179,7 +215,9 @@ char* _strJoin(char *s1, char *s2) {
   memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
   return result;
 }
+
 ${StructCode}
+
 ${FuncCode}
 
 ${code}
@@ -379,9 +417,10 @@ function normaliseType(type) {
     return type
   }
 }
+
 exports.getFunc = function(name, typeA, typeB, onErr) {
   if (!funcs[name]) {
-    return false
+    return [false]
   }
   var typeName = name+'_'+normaliseType(typeA)+'__'+normaliseType(typeB)
   var funcData = Functions[typeName]

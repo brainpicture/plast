@@ -41,11 +41,11 @@ function prepareWords(words, lineN, inner, file) {
   var res = []
   while(words.length) {
     var word = words.shift()
-    if (word == '(') {
+    if (word === '(') {
       res.push(prepareWords(words, lineN, ')'))
-    } else if (word == '[') {
+    } else if (word === '[') {
       res.push([prepareWords(words, lineN, ']'), 'array'])
-    } else if (word == inner) {
+    } else if (word === inner) {
       return res
     } else {
       res.push(word)
@@ -57,11 +57,25 @@ function prepareWords(words, lineN, inner, file) {
   return res
 }
 
+function setVarType(varName, oldType, setType, typeInfo, ln) {
+  if (oldType == 'variable') {
+    system.setType(varName, setType, typeInfo);
+    if (varName == lex.RET) { // set type for operator
+      CurOperator.type = setType
+    } else if (varName == lex.THIS) {
+      CurOperator.setType = setType
+    }
+  } else if(oldType != setType) {
+    err('Attempt to redefine ['+varName+'] from '+oldType+' to '+setType, ln)
+  }
+}
+
+
 function getTokens(line, lineN, file) {
   if (!line) {
     return false
   }
-  var words = line.match(/([0-9]+[0-9\.]+|[a-zA-Z0-9_]+[a-zA-Z0-9_]*|"[^"]*"|'[^']*'|`[^`]+`|[\+\-\\*\/=\^&!><:;,\|\?~]+|[\(\)\[\]])/g)
+  var words = line.match(/([0-9]+[0-9\.]+|[a-zA-Z0-9_]+[a-zA-Z0-9_]*|"[^"]*"|'[^']*'|`[^`]+`|[\+\-\\*\/=\^&!><:;,\|\?~\.]+|[\(\)\[\]])/g)
   var words = prepareWords(words, lineN, false, file)
   var tokens = parseWords(words, lineN)
   return tokens
@@ -88,6 +102,9 @@ function getOperator(typeA, op, typeB, lineN) {
   }
   if (!operator) {
     operator = Operators[typeA][op]
+  }
+  if (!operator) {
+    operator = Operators[typeA][op+' *']
   }
   if (!operator) {
     operator = Operators['*'][op+' *']
@@ -170,7 +187,17 @@ function parseNativeOperator(structure, operator, level) {
     operator.code = codeRaw[1]
     operator.type = tokens.shift() || 'undefined'
     if (tokens.length) {
-      operator.setType = tokens.shift() || 'undefined'
+      if (operator.thisType == 'variable') {
+        operator.setType = tokens.shift() || 'undefined'
+        if (tokens.length && operator.argType == 'variable') {
+          operator.setArgType = tokens.shift() || 'undefined'
+        }
+      } else if (operator.argType == 'variable') {
+        operator.setArgType = tokens.shift() || 'undefined'
+      }
+    }
+    if (tokens.length) {
+      err("native operator: should be variable to set type "+tokens.shift(), lineN)
     }
   }
 }
@@ -273,7 +300,22 @@ function buildBlocks(structure, level) {
   if (level == 0) {
     system.clear()
   }
+  var block = []
   while(structure.length) {
+    var [shift, line, lineN] = structure.shift()
+    if (shift == level) {
+      block.push([line, lineN])
+    } else if (shift > level) {
+      structure.unshift([shift, line, lineN])
+      block[block.length - 1][2] = buildBlocks(structure, level + 1)
+    } else if (shift < level) {
+      structure.unshift([shift, line, lineN])
+      return block
+    }
+  }
+  return block
+
+  /*while(structure.length) {
     var [shift, line, lineN] = structure.shift()
     if (shift == level) {
       var tokens = getTokens(line, lineN)
@@ -298,7 +340,7 @@ function buildBlocks(structure, level) {
   if (prevRow) {
     output += compileMain(prevRow, level)+"\n"
   }
-  return output;
+  return output;*/
 }
 
 function getOperators(structure, fileName) {
@@ -442,17 +484,38 @@ function compileTriple(triple, inner, level, ln) {
     var code = operator.block.code
     var type = operator.block.type
     var setType = operator.block.setType
+    var setArgType = operator.block.setArgType
   } else {
     var code = operator.code
     var type = operator.type
     var setType = operator.setType
+    var setArgType = operator.setArgType
+  }
+  if (type === '*' && op == '.') {
+    var ty = system.getTypeInfo(a)
+    for(var i in ty) {
+      for(var k in ty[i]) {
+        if (k == b) {
+          type = ty[i][k]
+        }
+      }
+    }
+    if (type === '*') {
+      err(a+'.'+b+' is undefined', ln)
+    }
   }
 
-  if (operator.precode) {
+  /*if (operator.precode) {
     pre = operator.precode
     pre = pre.replace(/\$block/g, codeBlock || '')
     pre = pre.replace(/\$this/g, codeA).replace(/\$arg/g, codeB)
     system.precode(pre)
+  }*/
+  if (setType) {
+    setVarType(a, typeA, setType, typeInfoB, ln)
+  }
+  if (setArgType) {
+    setVarType(b, typeB, setArgType, typeInfoB, ln)
   }
 
   if (code) {
@@ -470,26 +533,37 @@ function compileTriple(triple, inner, level, ln) {
           err('unknown C function $'+el, ln)
         }
         return funcName+isFunc
+      } else if (el == 'thisType') {
+        console.log('TYPEA', typeA);
+        return typeA
+      } else if (el == 'thisName') {
+        return a
+      } else if (el == 'argName') {
+        return b
       } else if (el == 'this') {
-        var l = lexA, t = typeA, c = codeA
+        var l = lexA, t = typeA, ty = typeInfoA, c = codeA
       } else if (el == 'arg') {
-        var l = lexB, t = typeB, c = codeB
+        var l = lexB, t = typeB, ty = typeInfoB, c = codeB
       } else if (el == 'block') {
+        codeBlock = compileMain(codeBlock, level + 1)
         if (link) {
           return system.wrapBlock(codeBlock) || ''
         } else {
           return codeBlock || ''
         }
+      } else if (el == 'thisSubType') {
+        var subType = typeA.split('_').pop()
+        return types.getNativeType(subType)
       } else {
         err('incorrect C token '+match, ln)
       }
       if (link) {
         if (l == lex.CONST || l == lex.ARR) {
-          if (t == 'struct') {
+          if (t == 'struct') { //TODO
             return c
           }
           var newVar = system.newVariable()
-          precode += types.toNative(t, newVar)+' = '+c+";\n"
+          precode += types.toNative(t, ty, newVar)+' = '+c+";\n"
           return '&'+system.wrapVariable(newVar, true)
         } else if (c.charAt(0) == '*') {
           return c.slice(1)
@@ -511,43 +585,48 @@ function compileTriple(triple, inner, level, ln) {
   }
 
   var typeInfo = []
+  var nameA = false
   if (type == 'struct') {
     if (typeA == 'struct') {
       typeInfo.push.apply(typeInfo, typeInfoA)
+    } else if (typeA == 'variable') {
+      nameA = a
     } else {
       typeInfo.push(typeA)
     }
     if (typeB == 'struct') {
       typeInfo.push.apply(typeInfo, typeInfoB)
+    } else if (nameA) {
+      var typeInfoObj = {}
+      typeInfoObj[nameA] = typeB
+      typeInfo.push(typeInfoObj)
     } else {
       typeInfo.push(typeB)
-    }
-  }
-
-  if (setType) {
-    if (typeA == 'variable') {
-      system.setType(a, setType);
-      if (a == lex.RET) { // set type for operator
-        CurOperator.type = setType
-      } else if (a == lex.THIS) {
-        CurOperator.setType = setType
-      }
-    } else if(typeA != setType) {
-      err('Attempt to redefine ['+a+'] from '+typeA+' to '+setType, ln)
     }
   }
 
   return [type, code, precode, typeInfo]
 }
 
-function compileMain(line, level) {
-  var codeAll = []
-  var [triple, ln] = line
-  var [type, code, precode] = compileTriple(triple, false, level, ln)
-  if (precode) {
-    code = precode+code
+function compileMain(lines, level) {
+  var codeAll = ''
+  while(lines.length) {
+    var [line, lineN, block] = lines.shift()
+    var tokens = getTokens(line, lineN)
+    if (!tokens) {
+      continue
+    }
+    var triple = parseTriple(tokens, level, lineN)
+    if (block) {
+      triple[3] = block
+    }
+    var [type, code, precode] = compileTriple(triple, false, level, lineN)
+    if (precode) {
+      code = precode + code
+    }
+    codeAll += code
   }
-  return code
+  return codeAll
 }
 
 function compileOperator(operator) {
@@ -572,18 +651,19 @@ function compileOperator(operator) {
   CurOperator = operator
 
   if (operator.thisType != 'variable') {
-    system.setType(lex.THIS, operator.thisType, lex.SCOPE_ARG)
+    system.setType(lex.THIS, operator.thisType, false, lex.SCOPE_ARG)
   }
   if (operator.argType && operator.argType != 'undefined') {
-    system.setType(lex.ARG, operator.argType, lex.SCOPE_ARG)
+    system.setType(lex.ARG, operator.argType, false, lex.SCOPE_ARG)
   }
 
   var prevOperator = CurOperator
   CurOperator = operator
 
-  var block = buildBlocks(lines, 1)
+  var blocks = buildBlocks(lines, 1)
+  var output = compileMain(blocks, 1)
 
-  block = system.getDefines() + "\n" + block
+  var block = system.getDefines() + "\n" + output
   if (operator.type != 'undefined') {
     block += "\nreturn "+system.wrapVariable('ret')+";"
   }

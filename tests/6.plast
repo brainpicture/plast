@@ -1,0 +1,12 @@
+"std.plast"
+
+main
+  a = [10,12,32]
+  a push 41
+  a pop != 41
+    "fail" print
+  else
+    a pop == 32
+      "ok" print
+    else
+      "fail" print
