@@ -17,7 +17,7 @@ operator push string
 operator compile
 
 main
-  line = arg[0] readFile eachLine
+  arg[0] readFileSync each line
     level = line match "^([ ]+)" [1] len
     level == 0
       operator compile

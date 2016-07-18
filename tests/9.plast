@@ -1,0 +1,10 @@
+"std.plast"
+
+main
+  a1,a2 = 3,4
+  c = 6,7
+  b1,b2=c
+  b1+a2 == 10 && b2+a1 == 10
+    "ok" print
+  else
+    "fail" print

@@ -10,22 +10,8 @@ run:
 	@echo "--------"
 	@./main.o
 test:
-	@node ./compiler/index.js tests/1.plast
-	@gcc main.c -o main.o
-	@./main.o
-	@node ./compiler/index.js tests/2.plast
-	@gcc main.c -o main.o
-	@./main.o
-	@node ./compiler/index.js tests/3.plast
-	@gcc main.c -o main.o
-	@./main.o
-	@node ./compiler/index.js tests/4.plast
-	@gcc main.c -o main.o
-	@./main.o
-	@node ./compiler/index.js tests/5.plast
-	@gcc main.c -o main.o
-	@./main.o
-	@node ./compiler/index.js tests/6.plast
-	@gcc main.c -o main.o
-	@./main.o
-
+	@for f in tests/*.plast; do\
+		node ./compiler/index.js "$$f";\
+		gcc main.c -o main.o;\
+		./main.o;\
+	done;

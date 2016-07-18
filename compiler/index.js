@@ -57,6 +57,22 @@ function prepareWords(words, lineN, inner, file) {
   return res
 }
 
+function getTypeInfo(name, type, typeInfo) {
+
+  if (type == 'tuple' || type == 'struct') {
+    if (typeInfo) {
+      typeInfo = system.convertTypeInfo(typeInfo)
+      return typeInfo
+    } else {
+      var [type, typeInfo] = system.getType(name)
+      return typeInfo
+    }
+  } else {
+    return type
+  }
+
+}
+
 function setVarType(varName, oldType, setType, typeInfo, ln) {
   if (oldType == 'variable') {
     system.setType(varName, setType, typeInfo);
@@ -66,6 +82,9 @@ function setVarType(varName, oldType, setType, typeInfo, ln) {
       CurOperator.setType = setType
     }
   } else if(oldType != setType) {
+    if (Array.isArray(varName)) {
+      varName = varName[3].join('.')
+    }
     err('Attempt to redefine ['+varName+'] from '+oldType+' to '+setType, ln)
   }
 }
@@ -83,7 +102,7 @@ function getTokens(line, lineN, file) {
 
 function prepareVar(a) {
   if (a) {
-    var [type, lexType] = types.getType(a)
+    var [type, lexType, a] = types.getType(a)
     if (lexType == lex.VAR) {
       a = system.wrapVariable(a, false)
     }
@@ -491,19 +510,6 @@ function compileTriple(triple, inner, level, ln) {
     var setType = operator.setType
     var setArgType = operator.setArgType
   }
-  if (type === '*' && op == '.') {
-    var ty = system.getTypeInfo(a)
-    for(var i in ty) {
-      for(var k in ty[i]) {
-        if (k == b) {
-          type = ty[i][k]
-        }
-      }
-    }
-    if (type === '*') {
-      err(a+'.'+b+' is undefined', ln)
-    }
-  }
 
   /*if (operator.precode) {
     pre = operator.precode
@@ -521,8 +527,8 @@ function compileTriple(triple, inner, level, ln) {
   if (code) {
     code = code.replace(/(&)?(\*)?\$([a-zA-Z_0-9]+)(\()?/g, function(match, link, pointer, el, isFunc) {
       if (isFunc) {
-        var tA = (typeA == 'struct' ? typeInfoA : typeA)
-        var tB = (typeB == 'struct' ? typeInfoB : typeB)
+        var tA = getTypeInfo(a, typeA, typeInfoA)
+        var tB = getTypeInfo(b, typeB, typeInfoB)
         var [funcName, newType] = system.getFunc(el, tA, tB, function(text) {
           err(text, ln)
         })
@@ -534,12 +540,13 @@ function compileTriple(triple, inner, level, ln) {
         }
         return funcName+isFunc
       } else if (el == 'thisType') {
-        console.log('TYPEA', typeA);
         return typeA
       } else if (el == 'thisName') {
         return a
       } else if (el == 'argName') {
         return b
+      } else if (el == 'thisLinked') {
+        return '&'+codeA.replace(/, ctx\./g, ', &ctx.') // too dirty
       } else if (el == 'this') {
         var l = lexA, t = typeA, ty = typeInfoA, c = codeA
       } else if (el == 'arg') {
@@ -560,11 +567,18 @@ function compileTriple(triple, inner, level, ln) {
       if (link) {
         if (l == lex.CONST || l == lex.ARR) {
           if (t == 'struct') { //TODO
-            return c
+            if (pointer) {
+              c = '{'+c+'}'
+            } else {
+              return c
+            }
+          } else if (t == 'tuple') {
+            //return c
+            c = '{'+c+'}'
           }
           var newVar = system.newVariable()
           precode += types.toNative(t, ty, newVar)+' = '+c+";\n"
-          return '&'+system.wrapVariable(newVar, true)
+          return (pointer ? '' : '&')+system.wrapVariable(newVar, true)
         } else if (c.charAt(0) == '*') {
           return c.slice(1)
         } else {
@@ -586,23 +600,36 @@ function compileTriple(triple, inner, level, ln) {
 
   var typeInfo = []
   var nameA = false
-  if (type == 'struct') {
-    if (typeA == 'struct') {
+  if (type == 'struct' && op == ':') {
+    var typeInfoObj = {}
+    typeInfoObj[a] = typeB
+    typeInfo.push(typeInfoObj)
+  } else if (type == 'struct' || type == 'tuple') {
+    if (typeA == 'struct' || typeA == 'tuple') {
       typeInfo.push.apply(typeInfo, typeInfoA)
     } else if (typeA == 'variable') {
-      nameA = a
+      var typeInfoObj = {}
+      typeInfoObj[a] = typeA
+      typeInfo.push(typeInfoObj)
     } else {
       typeInfo.push(typeA)
     }
-    if (typeB == 'struct') {
+    if (typeB == 'struct' || typeB == 'tuple') {
       typeInfo.push.apply(typeInfo, typeInfoB)
-    } else if (nameA) {
-      var typeInfoObj = {}
-      typeInfoObj[nameA] = typeB
-      typeInfo.push(typeInfoObj)
+    } else if (typeB == 'variable') {
+      if (type == 'tuple') {
+        var typeInfoObj = {}
+        typeInfoObj[b] = typeB
+        typeInfo.push(typeInfoObj)
+      } else {
+        err('struct value of '+a+' undefined', ln)
+      }
     } else {
       typeInfo.push(typeB)
     }
+  }
+  if (type === '*' && op == '.') {
+    var [type, typeInfo] = system.getStructType(a, b)
   }
 
   return [type, code, precode, typeInfo]

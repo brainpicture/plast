@@ -1,6 +1,6 @@
 // variable
 variable = string
-  `$this = strdup($arg)` string string
+  `$this = $arg` string string
 
 variable = integer
   `$this = $arg` integer integer
@@ -16,7 +16,7 @@ string print
   `printf("%s\n", $this)` integer
 
 string = string
-  `$this = strdup($arg)` string
+  `$this = $arg` string
 
 string += string
   `$this = _strJoin($this, $arg)` string
@@ -218,59 +218,78 @@ bool || bool
   block
     `condBool = ($this || $arg); if (condBool) {$block}` bool
 
-bool ? struct
+bool ? tuple
   `$ternarOp(&$this, *$arg)`
 
 
-// structs
+// tuples
 * , *
-  `&$this, &$arg` struct
+  `$this, $arg` tuple
+
+tuple print
+  `$structPrint(&$this)` integer
 
 struct print
-  `$structPrint($this)` integer
-  //`printf("$printTypes(this)\n", $this)`
+  `$structPrint(&$this)` integer
 
-struct = struct
-  `$structEq($this, *$arg)` struct
+tuple = tuple
+  `$structEq($thisLinked, &*$arg)` tuple
 
-struct == struct
-  `$structEqCheck($this, *$arg)` bool
+tuple = struct
+  `$structEq($thisLinked, $arg)` tuple
+
+tuple == tuple
+  `$structEqCheck(&$this, &$arg)` bool
   block
-    `condBool = $structEqCheck($this, *$arg); if (condBool) {$block}` bool
+    `condBool = $structEqCheck(&$this, &$arg); if (condBool) {$block}` bool
 
-struct != struct
-  `$structNotEqCheck($this, *$arg)` bool
+tuple != tuple
+  `$structNotEqCheck(&$this, &$arg)` bool
   block
-    `condBool = $structNotEqCheck($this, *$arg); if (condBool) {$block}` bool
+    `condBool = $structNotEqCheck(&$this, &$arg); if (condBool) {$block}` bool
 
-struct > struct
-  `$structMoreCheck($this, *$arg)` bool
+tuple > tuple
+  `$structMoreCheck(&$this, &$arg)` bool
   block
-    `condBool = $structMoreCheck($this, *$arg); if (condBool) {$block}` bool
+    `condBool = $structMoreCheck(&$this, &$arg); if (condBool) {$block}` bool
 
-struct >= struct
-  `$structMoreEqCheck($this, *$arg)` bool
+tuple >= tuple
+  `$structMoreEqCheck(&$this, &$arg)` bool
   block
-    `condBool = $structMoreEqCheck($this, *$arg); if (condBool) {$block}` bool
+    `condBool = $structMoreEqCheck(&$this, &$arg); if (condBool) {$block}` bool
 
-struct < struct
-  `$structLessCheck($this, *$arg)` bool
+tuple < tuple
+  `$structLessCheck(&$this, &$arg)` bool
   block
-    `condBool = $structLessCheck($this, *$arg); if (condBool) {$block}` bool
+    `condBool = $structLessCheck(&$this, &$arg); if (condBool) {$block}` bool
 
-struct <= struct
-  `$structLessEqCheck($this, *$arg)` bool
+tuple <= tuple
+  `$structLessEqCheck(&$this, &$arg)` bool
   block
-    `condBool = $structLessEqCheck($this, *$arg); if (condBool) {$block}` bool
+    `condBool = $structLessEqCheck(&$this, &$arg); if (condBool) {$block}` bool
 
-struct array
+tuple array
   `$structToArray(*$this)`
+
+tuple getType
+  `"tuple"` string
+
+// structs
+
+variable = tuple
+  `$this = (typeof($this)){$arg}` struct struct
 
 variable = struct
   `$this = (typeof($this)){$arg}` struct struct
 
 struct . *
   `$this.$argName` *
+
+variable . *
+  `$this.$argName` *
+
+struct getType
+  `"struct"` string
 
 // superstructs
 * : *

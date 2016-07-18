@@ -1,0 +1,9 @@
+"std.plast"
+
+main
+  user.wow = "test"
+  user.name.first = "test"
+  user.name.first == user.wow
+    "ok" print
+  else
+    "fail" print

@@ -21,6 +21,8 @@ exports.getNativeType = function(type, typeInfo) {
       return 'char**'
     case 'struct':
       return system.getStruct(typeInfo)
+    case 'tuple':
+      return system.getStruct(typeInfo)
   }
   return ''
 }
@@ -39,23 +41,27 @@ exports.toNative = function(type, typeInfo, varName, pointer) {
 
 exports.getType = function(a) {
   if (!a || a == 'undefined') {
-    return ['undefined', lex.CONST]
+    return ['undefined', lex.CONST, '"undefined"']
   }
   var str = a.match(/^"(.*)"$/)
   if (str) {
-    return ['string', lex.CONST]
+    return ['string', lex.CONST, 'strdup("'+str[1]+'")']
+  }
+  var str = a.match(/^'(.*)'$/)
+  if (str) {
+    return ['string', lex.CONST, 'strdup("'+str[1]+'")']
   }
   var num = a.match(/^([0-9]+)$/)
   if (num) {
-    return ['integer', lex.CONST]
+    return ['integer', lex.CONST, num[1]]
   }
   var floatNum = a.match(/^([0-9][0-9\.]+)$/)
   if (floatNum) {
-    return ['float', lex.CONST]
+    return ['float', lex.CONST, floatNum[1]]
   }
   var variable = a.match(/^([a-zA-Z_\-][a-zA-Z_\-0-9]*)$/)
   if (variable) {
-    return [system.getType(a), lex.VAR]
+    return [system.getType(a)[0], lex.VAR, variable[1]]
   }
-  return ['undefined', lex.CONST]
+  return ['undefined', lex.CONST, '']
 }

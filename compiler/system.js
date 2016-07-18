@@ -10,30 +10,87 @@ var Precodes = []
 var VariableIndex = 0
 var Context = []
 var Generics = {}
+var Structs = {}
 var types = require('./types.js')
 var lex = require('./lex.js')
 
 exports.getType = function(name) {
   if (Variables[name]) {
-    return Variables[name][0];
+    return Variables[name];
   } else {
-    return 'variable'
+    return ['variable', undefined, 0]
   }
 }
 
-exports.getTypeInfo = function(name) {
-  if (Variables[name]) {
-    return Variables[name][1];
-  } else {
-    return []
+function getStructScope(key, vars) {
+  if (Array.isArray(key)) {
+    var [k, v] = key[3]
+    var [newKey, newVars] = getStructScope(k, vars)
+    vars = vars[k]
+    return
   }
+  return [key, vars]
+
+}
+
+exports.getStructType = function(k, v) {
+  var [key, vars] = getScope(k, Variables)
+  var typeVar = vars[key]
+  if (typeVar) {
+    var res = typeVar[1][v]
+  }
+  return [res ? res[0] : 'variable', [k, v], 0]
+}
+
+exports.setSubType = function(nameChain, type, typeInfo, scope) {
+  var [key, value] = nameChain
+  if (!Variables[key]) {
+    Variables[key] = ['struct', [], scope || 0]
+  }
+  var typeObj = {}
+  typeObj[value] = type
+
+  Variables[key][1].push(typeObj)
+}
+
+
+function getScope(key, vars) {
+  if (Array.isArray(key)) {
+    var [k, v] = key[3]
+    var [newKey, newVars] = getScope(k, vars)
+    if (!newVars[newKey]) {
+      newVars[newKey] = ['struct', {}, 0]
+    }
+    return [v, newVars[newKey][1]]
+  }
+  return [key, vars]
+}
+
+exports.convertTypeInfo = function(typeInfo) {
+  if (Array.isArray(typeInfo)) {
+    var elNum = 0;
+    var struct = {}
+    for(var i in typeInfo) {
+      var el = typeInfo[i]
+      if (typeof(el) == 'object') {
+        for(var name in el) {
+          struct[name] = [el[name], false, 0]
+        }
+      } else {
+        struct['n'+elNum++] = [el, false, 0]
+      }
+    }
+    typeInfo = struct
+  }
+  return typeInfo
 }
 
 exports.setType = function(name, type, typeInfo, scope) {
-  if (Variables[name]) { // could not change scope
-    Variables[name][0] = type
+  var [key, vars] = getScope(name, Variables)
+  if (vars[key]) { // could not change scope
+    vars[key][0] = type
   } else {
-    Variables[name] = [type, typeInfo, scope || 0]
+    vars[key] = [type, exports.convertTypeInfo(typeInfo), scope || 0]
   }
 }
 
@@ -57,43 +114,43 @@ exports.newVariable = function() {
   return 'def'+VariableIndex++
 }
 
-exports.getStruct = function(typeInfo) {
-  var ctxName = 'ctx'+CtxNum++
-  var struct = 'typedef struct '+ctxName+' {\n';
-  var elNum = 0;
-  for(var i in typeInfo) {
-    var type = typeInfo[i]
-    if (typeof type === 'object') {
-      for(var name in type) {
-    console.log('type', name, type[name]);
-        if (Array.isArray(type[name])) {
-          struct += types.toNative('struct', type[name], name)+";\n"
-        } else {
-          console.log('gen type', type[name], name);
-          struct += types.toNative(type[name], false, name)+";\n"
-        }
-      }
+function getTypeHash(struct) {
+  var els = []
+  for(var name in struct) {
+    els.push(name)
+    var [type, typeInfo, scope] = struct[name]
+    if (type == 'struct' || type == 'tuple') {
+      els.push(getTypeHash(typeInfo))
     } else {
-      struct += types.toNative(type, false, 'n'+elNum++)+";\n"
+      els.push(type)
     }
   }
-  struct += '} '+ctxName+';\n'
-  StructCode += struct
+  return els.join(',')
+}
+
+exports.getStruct = function(struct) {
+  struct = exports.convertTypeInfo(struct) // tuple to link convert
+  var hash = getTypeHash(struct)
+  if (Structs[hash]) {
+    return Structs[hash]
+  }
+  var ctxName = 'ctx'+CtxNum++
+  var out = 'typedef struct '+ctxName+' {\n';
+  for(var name in struct) {
+    var [type, typeInfo, scope] = struct[name]
+    if (scope) {
+      continue
+    }
+    out += "  "+types.toNative(type, typeInfo, name)+";\n"
+  }
+  out += '} '+ctxName+';\n\n'
+  StructCode += out
+  Structs[hash] = ctxName
   return ctxName
 }
 
 exports.getDefines = function() {
-  var ctxName = 'ctx'+CtxNum++
-  var struct = 'typedef struct '+ctxName+' {\n';
-  for (var name in Variables) {
-    var [type, typeInfo, scope] = Variables[name]
-    console.log('get def', type, typeInfo, scope);
-    if (!scope) {
-      struct += types.toNative(type, typeInfo, name)+";\n"
-    }
-  }
-  struct += '} '+ctxName+';\n'
-  StructCode += struct
+  var ctxName = exports.getStruct(Variables)
   var precode = 'struct '+ctxName+ ' ctx;'
   precode += Precodes.join("\n")
   return precode
@@ -166,6 +223,8 @@ exports.getWeight = function(word) {
     return 7
   } else if (word.match(/^([\^\|&]|<<|>>)$/)) {
     return 8
+  } else if (word.match(/^\.$/)) {
+    return 9
   }
   return 0
 }
@@ -182,46 +241,11 @@ exports.addGeneric = function(type) {
 }
 
 exports.main = function(precode, code, mainFunc) {
-  return `#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <math.h>
-#include "lib/klib/kvec.h"
-
-bool condBool = true;
-typedef void (*block)(void* ctx);
-
-char* _strFromInt(int a) {
-  int length = snprintf(NULL, 0, "%d", a);
-  char* str = malloc( length + 1 );
-  snprintf(str, length + 1, "%d", a);
-  return str;
-}
-
-char* _strFromFloat(float a) {
-  int length = snprintf(NULL, 0, "%g", a);
-  char* str = malloc(length + 1 );
-  snprintf(str, length + 1, "%g", a);
-  return str;
-}
-
-char* _strJoin(char *s1, char *s2) {
-  size_t len1 = strlen(s1);
-  size_t len2 = strlen(s2);
-  char *result = malloc(len1+len2+1);//+1 for the zero-terminator
-  //in real code you would check for errors in malloc here
-  memcpy(result, s1, len1);
-  memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
-  return result;
-}
+  return `#include "lib/env.c"
 
 ${StructCode}
-
 ${FuncCode}
-
 ${code}
-
 int main() {
 ${precode}
 ${mainFunc}();
@@ -250,91 +274,108 @@ ${code}
 var funcs = {}
 funcs.structPrint = function(funcName, typeInfo) {
     var args = [], params = [], printOpts = []
+    var structType = exports.getStruct(typeInfo)
     var printTypes = {
       'string': '%s',
       'integer': '%d',
       'float': '%g',
       'bool': '%s',
     }
-    for(var i in typeInfo) {
-      var type = typeInfo[i]
-      var varName = '*n'+i
+    for(var name in typeInfo) {
+      var pref = ''
+      if (!name.match(/^n[0-9]+$/)) {
+        pref = name+': '
+      }
+      var [type] = typeInfo[name]
+      var varName = 'arg->'+name
       args.push(types.getNativeType(type) + ' ' + varName)
       if (type == 'bool') {
         params.push(varName+' ? "true" : "false"')
       } else {
         params.push(varName)
       }
-      printOpts.push(printTypes[type])
+      printOpts.push(pref+printTypes[type])
     }
     args = args.join(', ')
     params = params.join(', ')
     printOpts = printOpts.join(', ')
-return [`int ${funcName}(${args}) {
+return [`int ${funcName}(${structType} *arg) {
 return printf("${printOpts}\\n", ${params});
 }`, 'integer']
 }
 
-funcs.structEq = function(funcName, typeA, typeB, err) {
-  var args = []
-  var code = []
-  if (typeA.length > typeB.length) {
-    err('left side contain '+typeA.length+' elements, '+typeB.length+' expected')
-  }
-  for(var i in typeA) {
-    var type = typeA[i]
-    var varName = '*a'+i
-    args.push(types.getNativeType(type) + ' ' + varName)
-    if (type != typeB[i]) {
-      err('wrong type converion from '+type+' to '+typeB[i]+', element #'+(parseInt(i)+1))
-    }
-    code.push(varName+' = b'+i+';')
-  }
-  for(var i in typeB) {
-    var type = typeB[i]
-    var varName = 'b'+i
-    args.push(types.getNativeType(type) + ' ' + varName)
-  }
-  args = args.join(', ')
-  code = code.join("\n")
+funcs.structEq = function(funcName, typeInfoA, typeInfoB, err) {
+  var argType = exports.getStruct(typeInfoB)
 
-return [`void ${funcName}(${args}) {
+  var code = []
+  var thisArgs = []
+
+  var argTypes = []
+  for(var i in typeInfoB) {
+    argTypes.push([i, typeInfoB[i]])
+  }
+  var elN = 0
+  for(var a in typeInfoA) {
+    var [typeA, typeInfo] = typeInfoA[a]
+    if (!argTypes.length) {
+      err('left side contain '+typeInfoA.length+' elements, '+typeInfoB.length+' expected')
+    }
+    var [argName, [setType, setTypeInfo]] = argTypes.shift()
+    exports.setType(a, setType, setTypeInfo);
+    var type = types.getNativeType(setType, setTypeInfo)
+    var aName = '*a'+elN
+    thisArgs.push(type+' '+aName)
+    code.push(aName+' = arg.'+argName+';')
+    elN += 1
+  }
+  code = code.join("\n")
+  thisArgs = thisArgs.join(", ")
+
+return [`void ${funcName}(${thisArgs}, ${argType} arg) {
 ${code}
 }`, 'struct']
 }
 
-function structCheck(check, onlyType, funcName, typeA, typeB, err) {
-  var args = []
-  var code = []
-  if (typeA.length != typeB.length) {
-    err('left side contain '+typeA.length+' elements, '+typeB.length+' expected')
+function structCheck(check, onlyType, funcName, typeInfoA, typeInfoB, err) {
+  var thisType = exports.getStruct(typeInfoA)
+  var argType = exports.getStruct(typeInfoB)
+  var argTypes = []
+  for(var i in typeInfoB) {
+    argTypes.push([i, typeInfoB[i]])
   }
-  for(var i in typeA) {
-    var type = typeA[i]
-    var varName = '*a'+i
-    args.push(types.getNativeType(type) + ' ' + varName)
-    if (type != typeB[i]) {
-      err('wrong type converion from '+type+' to '+typeB[i]+', element #'+(parseInt(i)+1))
+
+  var code = []
+  var elN = 0
+  for(var i in typeInfoA) {
+    var [typeA] = typeInfoA[i]
+    var thisName = 'this->'+i
+
+    if (!argTypes.length) {
+      err('too few arguments')
     }
-    if (onlyType && onlyType.indexOf(type) == -1) {
-      err('struct '+check+' struct support only '+onlyType+'; '+type+' given')
+    var [b, [typeB]] = argTypes.shift()
+    var argName = 'arg->'+b
+
+    if (typeA != typeB) {
+      err('wrong type converion from '+typeA+' to '+typeB+', element #'+(elN+1))
     }
-    if (type == 'string') {
-      var checkCode = 'strcmp('+varName+', b'+i+') '+check+' 0'
+    if (onlyType && onlyType.indexOf(typeA) == -1) {
+      err('struct '+check+' struct support only '+onlyType+'; '+typeA+' given')
+    }
+    if (typeA == 'string') {
+      var checkCode = 'strcmp('+thisName+', '+argName+') '+check+' 0'
     } else {
-      var checkCode = varName+' '+check+' b'+i
+      var checkCode = thisName+' '+check+' '+argName
     }
     code.push('if ('+checkCode+') return false;')
+    elN += 1
   }
-  for(var i in typeB) {
-    var type = typeB[i]
-    var varName = 'b'+i
-    args.push(types.getNativeType(type) + ' ' + varName)
+  if (argTypes.length) {
+    err('too much arguments')
   }
-  args = args.join(', ')
   code = code.join("\n")
 
-return [`bool ${funcName}(${args}) {
+return [`bool ${funcName}(${thisType} *this, ${argType} *arg) {
 ${code}
 return true;
 }`, 'bool']
@@ -366,7 +407,7 @@ funcs.structToArray = function(funcName, thisType, argType, err) {
     var retLines = []
 
     for(var i in thisType) {
-      var type = thisType[i]
+      var [type] = thisType[i]
       if (allType !== false && type != allType) {
         err('attempt to init array with different types '+type+' and '+allType+', element #'+(parseInt(i)+1))
       }
@@ -409,20 +450,12 @@ ${code}
 }`, typeB[0]]
 }
 
-
-function normaliseType(type) {
-  if (Array.isArray(type)) {
-    return type.join('_')
-  } else {
-    return type
-  }
-}
-
 exports.getFunc = function(name, typeA, typeB, onErr) {
   if (!funcs[name]) {
     return [false]
   }
-  var typeName = name+'_'+normaliseType(typeA)+'__'+normaliseType(typeB)
+  var typeName = name+'_'+getTypeHash(typeA)+'__'+getTypeHash(typeB)
+  //var typeName = name+'_'+normaliseType(typeA)+'__'+normaliseType(typeB)
   var funcData = Functions[typeName]
   if (funcData) {
     return funcData
