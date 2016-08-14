@@ -4,31 +4,69 @@
 #include <stdbool.h>
 #include <math.h>
 #include "klib/kvec.h"
+#include "sds/sds.c"
 
 bool condBool = true;
 typedef void (*block)(void* ctx);
+typedef kvec_t(sds) array_string;
 
-char* _strFromInt(int a) {
-  int length = snprintf(NULL, 0, "%d", a);
-  char* str = malloc( length + 1 );
-  snprintf(str, length + 1, "%d", a);
-  return str;
+sds _strFromFloat(float a) {
+  return sdscatprintf(sdsempty(), "%g", a);
 }
 
-char* _strFromFloat(float a) {
-  int length = snprintf(NULL, 0, "%g", a);
-  char* str = malloc(length + 1 );
-  snprintf(str, length + 1, "%g", a);
-  return str;
+sds _strFromFile(sds fileName) {
+  FILE *file = fopen(fileName, "r");
+  char *code;
+  size_t n = 0;
+  int c;
+
+  if (file == NULL) return NULL; //could not open file
+  fseek(file, 0, SEEK_END);
+  long f_size = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  code = malloc(f_size);
+
+  while ((c = fgetc(file)) != EOF) {
+      code[n++] = (char)c;
+  }
+
+  code[n] = '\0';
+
+  sds out = sdsnew(code);
+  free(code);
+  return out;
 }
 
-char* _strJoin(char *s1, char *s2) {
-  size_t len1 = strlen(s1);
-  size_t len2 = strlen(s2);
-  char *result = malloc(len1+len2+1);//+1 for the zero-terminator
-  //in real code you would check for errors in malloc here
-  memcpy(result, s1, len1);
-  memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
-  return result;
+array_string _strTok(sds str, sds delim) {
+  array_string array;
+  kv_init(array);
+
+  int count, j;
+  sds *tokens;
+  tokens = sdssplitlen(str, sdslen(str), delim, sdslen(delim), &count);
+  for (j = 0; j < count; j++) {
+    kv_push(sds, array, sdsdup(tokens[j]));
+  }
+  sdsfreesplitres(tokens,count);
+
+
+
+  /*char *ch;
+  char *s = strdup(str);
+  ch = strtok(s, delim);
+
+  while (ch != NULL) {
+    kv_push(char*, array, ch);
+    ch = strtok(NULL, delim);
+  }*/
+  return array;
 }
 
+int _strLeftShift(sds str, char symbol) {
+  int len = sdslen(str);
+  int i = 0;
+  while(i < len && str[i] == symbol) {
+    i++;
+  }
+  return i;
+}

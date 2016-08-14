@@ -74,12 +74,12 @@ function getTypeInfo(name, type, typeInfo) {
 }
 
 function setVarType(varName, oldType, setType, typeInfo, ln) {
+  console.log('set var type', varName, oldType, setType, typeInfo);
   if (oldType == 'variable') {
     system.setType(varName, setType, typeInfo);
-    if (varName == lex.RET) { // set type for operator
-      CurOperator.type = setType
-    } else if (varName == lex.THIS) {
+    if (varName == lex.THIS) {
       CurOperator.setType = setType
+      console.log("ST", setType);
     }
   } else if(oldType != setType) {
     if (Array.isArray(varName)) {
@@ -94,7 +94,7 @@ function getTokens(line, lineN, file) {
   if (!line) {
     return false
   }
-  var words = line.match(/([0-9]+[0-9\.]+|[a-zA-Z0-9_]+[a-zA-Z0-9_]*|"[^"]*"|'[^']*'|`[^`]+`|[\+\-\\*\/=\^&!><:;,\|\?~\.]+|[\(\)\[\]])/g)
+  var words = line.match(/([0-9]+[0-9\.]+|[a-zA-Z0-9_]+[a-zA-Z0-9_]*|"[^"]*"|'[^']*'|`[^`]+`|[\+\-\\*\/=\^&!><:;,\|\?~\.%]+|[\(\)\[\]])/g)
   var words = prepareWords(words, lineN, false, file)
   var tokens = parseWords(words, lineN)
   return tokens
@@ -111,7 +111,7 @@ function prepareVar(a) {
   return ['undefined', 'NULL']
 }
 
-function getOperator(typeA, op, typeB, lineN) {
+function getOperator(typeA, op, typeB, lineN, strict) {
   var operator = false
   if (!Operators[typeA]) {
     Operators[typeA] = {}
@@ -122,11 +122,13 @@ function getOperator(typeA, op, typeB, lineN) {
   if (!operator) {
     operator = Operators[typeA][op]
   }
-  if (!operator) {
-    operator = Operators[typeA][op+' *']
-  }
-  if (!operator) {
-    operator = Operators['*'][op+' *']
+  if (!strict) {
+    if (!operator) {
+      operator = Operators[typeA][op+' *']
+    }
+    if (!operator) {
+      operator = Operators['*'][op+' *']
+    }
   }
   return operator;
 }
@@ -204,6 +206,7 @@ function parseNativeOperator(structure, operator, level) {
       err("First token should be code, surrounded by `` in native operator", lineN)
     }
     operator.code = codeRaw[1]
+    operator.native = true
     operator.type = tokens.shift() || 'undefined'
     if (tokens.length) {
       if (operator.thisType == 'variable') {
@@ -257,6 +260,10 @@ function parseTriple(tokens, level, lineN) {
       var innerTriple = parseTriple(word, level, lineN)
       tokens[i] = compileTriple(innerTriple, true, level, lineN)
     }
+  }
+
+  if (tokens[0] == lex.RETURN) {
+    tokens.unshift(false)
   }
 
   while (tokens.length > 2) {
@@ -333,33 +340,6 @@ function buildBlocks(structure, level) {
     }
   }
   return block
-
-  /*while(structure.length) {
-    var [shift, line, lineN] = structure.shift()
-    if (shift == level) {
-      var tokens = getTokens(line, lineN)
-      if (!tokens) {
-        continue
-      }
-      if (prevRow) {
-        output += compileMain(prevRow, level)+"\n"
-      }
-      var triples = parseTriple(tokens, level, lineN)
-
-      prevRow = [triples, lineN]
-    } else if (shift > level) {
-      structure.unshift([shift, line, lineN])
-      var block = buildBlocks(structure, level + 1)
-      prevRow[0][3] = block
-    } else {
-      structure.unshift([shift, line, lineN])
-      break
-    }
-  }
-  if (prevRow) {
-    output += compileMain(prevRow, level)+"\n"
-  }
-  return output;*/
 }
 
 function getOperators(structure, fileName) {
@@ -386,7 +366,11 @@ function getOperators(structure, fileName) {
         tokens.push('undefined')
       }
       if (tokens.length < 3) {
-        tokens.unshift('undefined')
+        if (tokens[0] == 'main') {
+          tokens.unshift('undefined')
+        } else {
+          tokens.unshift('variable')
+        }
       }
       var [typeA, op, typeB] = tokens
       var options = {
@@ -399,7 +383,7 @@ function getOperators(structure, fileName) {
         argType: typeB,
         lines: []
       }
-      var operator = getOperator(typeA, op, typeB, lineN)
+      var operator = getOperator(typeA, op, typeB, lineN, true)
       if (operator) {
         var msg ='Operator '+typeA+' '+op+' '+typeB+' already defined'
         if (operator.lineN) {
@@ -481,14 +465,31 @@ function compileTriple(triple, inner, level, ln) {
       var [typeB, codeB] = prepareVar(b)
       var [,lexB] = types.getType(b)
     }
+    if (typeInfoB == undefined && lexB == lex.VAR) {
+      var [typeB, typeInfoB] = system.getType(b)
+    }
   } else {
     var [typeB, codeB] = prepareVar(undefined)
     var lexB = lex.CONST
   }
 
-  var operator = getOperator(typeA, op, typeB, ln)
+  if (op == '=' && typeA == 'variable' && lexB == lex.VAR) {
+    var operator = getOperator(typeA, op, '*', ln)
+  } else {
+    var operator = getOperator(typeA, op, typeB, ln)
+  }
+  if (typeA == 'undefined' && op == lex.RETURN) { // set type on return operator
+    if (CurOperator.type != 'undefined' && CurOperator.type != typeB) {
+      err('Couldn\'t set return type as '+typeB+', it\'s already deffined as '+CurOperator.type+' at line '+CurOperator.returnLn, ln)
+    }
+    CurOperator.type = typeB
+    if (!CurOperator.returnLn) {
+      CurOperator.returnLn = ln
+    }
+  }
+
   if (!operator) {
-    err('Operator not found: '+typeA+' '+op+(typeB && typeB != 'undefined' ? ' '+typeB : ''), ln)
+    err('Operator not found: '+typeA+' '+op+(typeB && typeB != 'undefined' && typeB != 'variable' ? ' '+typeB : ''), ln)
   }
   if (!operator.state) {
     compileOperator(operator)
@@ -511,12 +512,9 @@ function compileTriple(triple, inner, level, ln) {
     var setArgType = operator.setArgType
   }
 
-  /*if (operator.precode) {
-    pre = operator.precode
-    pre = pre.replace(/\$block/g, codeBlock || '')
-    pre = pre.replace(/\$this/g, codeA).replace(/\$arg/g, codeB)
-    system.precode(pre)
-  }*/
+  if (setType == '*') {
+    setType = typeB
+  }
   if (setType) {
     setVarType(a, typeA, setType, typeInfoB, ln)
   }
@@ -525,6 +523,7 @@ function compileTriple(triple, inner, level, ln) {
   }
 
   if (code) {
+    var declared = {}
     code = code.replace(/(&)?(\*)?\$([a-zA-Z_0-9]+)(\()?/g, function(match, link, pointer, el, isFunc) {
       if (isFunc) {
         var tA = getTypeInfo(a, typeA, typeInfoA)
@@ -576,8 +575,13 @@ function compileTriple(triple, inner, level, ln) {
             //return c
             c = '{'+c+'}'
           }
-          var newVar = system.newVariable()
-          precode += types.toNative(t, ty, newVar)+' = '+c+";\n"
+          var declKey = el+': '+c
+          var newVar = declared[declKey]
+          if (!newVar) {
+            newVar = system.newVariable()
+            declared[declKey] = newVar
+            precode += types.toNative(t, ty, newVar)+' = '+c+";\n"
+          }
           return (pointer ? '' : '&')+system.wrapVariable(newVar, true)
         } else if (c.charAt(0) == '*') {
           return c.slice(1)
@@ -600,6 +604,8 @@ function compileTriple(triple, inner, level, ln) {
 
   var typeInfo = []
   var nameA = false
+
+
   if (type == 'struct' && op == ':') {
     var typeInfoObj = {}
     typeInfoObj[a] = typeB
@@ -691,9 +697,6 @@ function compileOperator(operator) {
   var output = compileMain(blocks, 1)
 
   var block = system.getDefines() + "\n" + output
-  if (operator.type != 'undefined') {
-    block += "\nreturn "+system.wrapVariable('ret')+";"
-  }
 
   operator.state = 2
 

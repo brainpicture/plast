@@ -1,27 +1,24 @@
-string parseWords
-  ret = this trim " " split "[\s]+"
+"std.plast"
 
-operator
-  this =
-    lines: [],
-    thisType: "undefined",
-    op: "undefined",
-    argType: "undefined"
+plast
+  this.file = ""
+  this.lineNum = 0
 
-operator init string
-  this.thisType, this.op, this.argType = arg parseWords
+plast err string
+  "Line" + this.lineNum + ": " + arg print
 
-operator push string
-  this.lines push arg
+plast compile string
+  this.file = arg
+  code = this.file readFileSync
+  code tok "\n" each line
+    this.lineNum += 1
+    shift = line getLeftShift
+    line+";" print
+    shift % 2 != 0
+      return this err "incorrect line shift"
+    "over" print
 
-operator compile
 
 main
-  arg[0] readFileSync each line
-    level = line match "^([ ]+)" [1] len
-    level == 0
-      operator compile
-      operator init line
-    else
-      operator push line
-
+  plast plast
+  plast compile "tests/1.plast"

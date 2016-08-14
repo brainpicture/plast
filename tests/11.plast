@@ -1,0 +1,13 @@
+"std.plast"
+
+main
+  str = "one two three four"
+  i = 0
+  str tok " " each token
+    i += 1
+    i == 3
+      token == "three"
+        "ok" print
+      else
+        "fail" print
+

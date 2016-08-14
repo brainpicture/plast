@@ -6,7 +6,7 @@ exports.CONST = 3
 exports.ARR = 4
 
 exports.THIS = 'this'
-exports.RET = 'ret'
+exports.RETURN = 'return'
 exports.ARG = 'arg'
 
 exports.SCOPE_ARG = 1;

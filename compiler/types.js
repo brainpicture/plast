@@ -7,7 +7,7 @@ var lex = require('./lex.js')
 exports.getNativeType = function(type, typeInfo) {
   switch(type) {
     case 'string':
-      return 'char*'
+      return 'sds'
     case 'integer':
       return 'int'
     case 'float':
@@ -18,7 +18,8 @@ exports.getNativeType = function(type, typeInfo) {
       system.addGeneric('array_integer')
       return 'array_integer'
     case 'array_string':
-      return 'char**'
+      //system.addGeneric('array_string') //used in env.c
+      return 'array_string'
     case 'struct':
       return system.getStruct(typeInfo)
     case 'tuple':
@@ -45,11 +46,11 @@ exports.getType = function(a) {
   }
   var str = a.match(/^"(.*)"$/)
   if (str) {
-    return ['string', lex.CONST, 'strdup("'+str[1]+'")']
+    return ['string', lex.CONST, 'sdsnew("'+str[1]+'")']
   }
   var str = a.match(/^'(.*)'$/)
   if (str) {
-    return ['string', lex.CONST, 'strdup("'+str[1]+'")']
+    return ['string', lex.CONST, 'sdsnew("'+str[1]+'")']
   }
   var num = a.match(/^([0-9]+)$/)
   if (num) {

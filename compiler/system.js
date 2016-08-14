@@ -207,7 +207,9 @@ exports.precode = function(code) {
   Precodes.push(code)
 }
 exports.getWeight = function(word) {
-  if (word.match(/^[\+\-\*\/]?=$/)) {
+  if (word == lex.RETURN) {
+    return -2
+  } else if (word.match(/^[\+\-\*\/]?=$/)) {
     return -1
   } else if (word.match(/^(&&|\|\|)/)) {
     return 1
@@ -219,7 +221,7 @@ exports.getWeight = function(word) {
     return 4
   } else if (word.match(/^[\+\-]$/)) {
     return 5
-  } else if (word.match(/^[\*\/]$/)) {
+  } else if (word.match(/^[\*\/%]$/)) {
     return 7
   } else if (word.match(/^([\^\|&]|<<|>>)$/)) {
     return 8

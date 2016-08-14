@@ -1,13 +1,13 @@
 "std.plast"
 
 integer plus3
-  ret = (this + 1) plus2
+  return (this + 1) plus2
 
 integer plus2
   this > 10
-    ret = this
+    return this
   else
-    ret = this plus3
+    return this plus3
 
 main
   b = 0

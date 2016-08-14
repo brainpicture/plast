@@ -1,11 +1,8 @@
 "std.plast"
 
+plast
+  this = "wow"
+
 main
-  a = "wow"
-  numbers = a:10, b:12, c:30
-  numbers print
-  1,2,3 print
-  numbers.c - (numbers.a + numbers.b) == 8
-    "ok" print
-  else
-    "fail" print
+  plast plast
+  plast print

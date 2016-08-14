@@ -1,6 +1,6 @@
 all:
 	@node ./compiler/index.js main.plast
-	@gcc -o main.o main.c
+	@gcc -o main.o main.c -w
 	@echo "--------"
 	@./main.o
 compile:
@@ -10,8 +10,16 @@ run:
 	@echo "--------"
 	@./main.o
 test:
-	@for f in tests/*.plast; do\
-		node ./compiler/index.js "$$f";\
-		gcc main.c -o main.o;\
+	@NUM=1;\
+	while [ -f "tests/"$$NUM".plast" ]; do\
+		node ./compiler/index.js "tests/"$$NUM".plast";\
+		gcc main.c -o main.o -w;\
+		printf $$NUM": ";\
 		./main.o;\
+		NUM=$$((NUM+1));\
 	done;
+self:
+	@node ./compiler/index.js compiler.plast
+	@gcc -o main.o main.c
+	@echo "--------"
+	@./main.o

@@ -1,0 +1,9 @@
+"std.plast"
+
+main
+  numbers = a:10, b:12, c:30
+  cn = numbers
+  cn.a+cn.b == 22
+    "ok" print
+  else
+    "fail" print
