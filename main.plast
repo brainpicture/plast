@@ -1,8 +1,11 @@
 "std.plast"
 
 plast
-  this = "wow"
+  this.test = "wow"
+
+plast retTest
+  return this.test
 
 main
   plast plast
-  plast print
+  plast retTest print

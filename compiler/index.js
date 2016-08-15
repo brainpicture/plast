@@ -68,18 +68,24 @@ function getTypeInfo(name, type, typeInfo) {
       return typeInfo
     }
   } else {
+    var subType = system.getObjectType(type)
+    if (subType) {
+      return getTypeInfo(name, subType[0], subType[1])
+    }
     return type
   }
 
 }
 
 function setVarType(varName, oldType, setType, typeInfo, ln) {
-  console.log('set var type', varName, oldType, setType, typeInfo);
   if (oldType == 'variable') {
-    system.setType(varName, setType, typeInfo);
+    var rootVar = system.setType(varName, setType, typeInfo);
     if (varName == lex.THIS) {
-      CurOperator.setType = setType
-      console.log("ST", setType);
+      CurOperator.setType = CurOperator.name
+      CurOperator.thisType = setType
+    } else if (rootVar == lex.THIS) {
+      CurOperator.setType = CurOperator.name
+      CurOperator.thisType = 'struct'
     }
   } else if(oldType != setType) {
     if (Array.isArray(varName)) {
@@ -103,6 +109,7 @@ function getTokens(line, lineN, file) {
 function prepareVar(a) {
   if (a) {
     var [type, lexType, a] = types.getType(a)
+    //if (lexType == lex.VAR && a != lex.THIS) {
     if (lexType == lex.VAR) {
       a = system.wrapVariable(a, false)
     }
@@ -128,6 +135,13 @@ function getOperator(typeA, op, typeB, lineN, strict) {
     }
     if (!operator) {
       operator = Operators['*'][op+' *']
+    }
+  }
+  if (!operator) {
+    var subType = system.getObjectType(typeA)
+    if (subType) {
+      [typeA] = subType
+      return getOperator(typeA, op, typeB, lineN, strict)
     }
   }
   return operator;
@@ -453,7 +467,7 @@ function compileTriple(triple, inner, level, ln) {
     var lexA = lex.CONST
   } else {
     var [,lexA] = types.getType(a)
-    var [typeA, codeA] = prepareVar(a)
+    var [typeA, codeA] = prepareVar(a) // here prep this
   }
 
   if (b) {
@@ -683,9 +697,10 @@ function compileOperator(operator) {
   system.contextPush(operator)
   CurOperator = operator
 
-  if (operator.thisType != 'variable') {
+  //if (operator.thisType != 'variable') {
+  // any way set up this
     system.setType(lex.THIS, operator.thisType, false, lex.SCOPE_ARG)
-  }
+  //}
   if (operator.argType && operator.argType != 'undefined') {
     system.setType(lex.ARG, operator.argType, false, lex.SCOPE_ARG)
   }
@@ -702,6 +717,9 @@ function compileOperator(operator) {
 
   if (operator.thisType == 'variable' && !operator.setType) {
     err('[this] should be set, in variable based operators: '+operator.thisType+' '+operator.name+' '+operator.argType, CurOperator.lineN)
+  }
+  if (operator.setType && operator.thisType) {
+    system.setObjectType(operator.setType)
   }
   var args = system.getArguments(false, operator)
 

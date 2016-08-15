@@ -24,6 +24,19 @@ exports.getNativeType = function(type, typeInfo) {
       return system.getStruct(typeInfo)
     case 'tuple':
       return system.getStruct(typeInfo)
+    case 'undefined':
+      return ''
+      break;
+    default:
+      if (type) {
+        console.log('type', type);
+        var subType = system.getObjectType(type)
+        console.log('subtype', subType);
+        if (subType) {
+          return exports.getNativeType(subType[0], subType[1])
+        }
+      }
+      break;
   }
   return ''
 }

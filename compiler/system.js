@@ -11,8 +11,17 @@ var VariableIndex = 0
 var Context = []
 var Generics = {}
 var Structs = {}
+var ObjectTypes = {}
 var types = require('./types.js')
 var lex = require('./lex.js')
+
+exports.setObjectType = function(obj) {
+  ObjectTypes[obj] = Variables[lex.THIS]
+}
+exports.getObjectType = function(obj) {
+  return ObjectTypes[obj]
+}
+
 
 exports.getType = function(name) {
   if (Variables[name]) {
@@ -30,7 +39,6 @@ function getStructScope(key, vars) {
     return
   }
   return [key, vars]
-
 }
 
 exports.getStructType = function(k, v) {
@@ -57,13 +65,15 @@ exports.setSubType = function(nameChain, type, typeInfo, scope) {
 function getScope(key, vars) {
   if (Array.isArray(key)) {
     var [k, v] = key[3]
-    var [newKey, newVars] = getScope(k, vars)
+    var [newKey, newVars, rootVar] = getScope(k, vars)
     if (!newVars[newKey]) {
       newVars[newKey] = ['struct', {}, 0]
+    } else if (newVars[newKey][0] == 'variable' && !newVars[newKey][1]) {
+      newVars[newKey] = ['struct', {}, 0]
     }
-    return [v, newVars[newKey][1]]
+    return [v, newVars[newKey][1], rootVar]
   }
-  return [key, vars]
+  return [key, vars, key]
 }
 
 exports.convertTypeInfo = function(typeInfo) {
@@ -86,12 +96,13 @@ exports.convertTypeInfo = function(typeInfo) {
 }
 
 exports.setType = function(name, type, typeInfo, scope) {
-  var [key, vars] = getScope(name, Variables)
+  var [key, vars, rootVar] = getScope(name, Variables)
   if (vars[key]) { // could not change scope
     vars[key][0] = type
   } else {
     vars[key] = [type, exports.convertTypeInfo(typeInfo), scope || 0]
   }
+  return rootVar
 }
 
 exports.wrapVariable = function(name, simple) {
@@ -105,7 +116,7 @@ exports.wrapVariable = function(name, simple) {
   }
   var [type, typeInfo, scope] = info
   if (scope == lex.SCOPE_ARG) {
-    return '*'+name
+    return '(*'+name+')'
   }
   return c+name
 }
@@ -129,12 +140,14 @@ function getTypeHash(struct) {
 }
 
 exports.getStruct = function(struct) {
+  console.log('ge struct', struct);
   struct = exports.convertTypeInfo(struct) // tuple to link convert
   var hash = getTypeHash(struct)
   if (Structs[hash]) {
     return Structs[hash]
   }
   var ctxName = 'ctx'+CtxNum++
+  console.log('ctxName', ctxName);
   var out = 'typedef struct '+ctxName+' {\n';
   for(var name in struct) {
     var [type, typeInfo, scope] = struct[name]
@@ -168,7 +181,7 @@ exports.getArguments = function(link, operator) {
       args.push('void* blockCtx')
     }
   }
-  defArgs[lex.THIS] = ['$this', operator.thisType]
+  defArgs[lex.THIS] = ['$this', operator.setType]
   defArgs[lex.ARG] = ['$arg', operator.argType]
   for(var name in defArgs) {
     //var val = Variables[name]
@@ -463,6 +476,7 @@ exports.getFunc = function(name, typeA, typeB, onErr) {
     return funcData
   }
   var funcName = name+(FuncNum++)
+  console.log('TYPEA', typeA);
   var [code, retType] = funcs[name](funcName, typeA, typeB, onErr)
   FuncCode += code+'\n\n'
   Functions[typeName] = [funcName, retType]
