@@ -42,9 +42,15 @@ function getStructScope(key, vars) {
 }
 
 exports.getStructType = function(k, v) {
-  var [key, vars] = getScope(k, Variables)
+  var [key, vars, rootKey] = getScope(k, Variables)
   var typeVar = vars[key]
   if (typeVar) {
+    if (rootKey == lex.THIS) {
+      var newTypeVar = exports.getObjectType(typeVar[0])
+      if (newTypeVar) {
+        typeVar = newTypeVar
+      }
+    }
     var res = typeVar[1][v]
   }
   return [res ? res[0] : 'variable', [k, v], 0]
@@ -69,7 +75,7 @@ function getScope(key, vars) {
     if (!newVars[newKey]) {
       newVars[newKey] = ['struct', {}, 0]
     } else if (newVars[newKey][0] == 'variable' && !newVars[newKey][1]) {
-      newVars[newKey] = ['struct', {}, 0]
+      newVars[newKey] = ['struct', {}, lex.SCOPE_ARG]
     }
     return [v, newVars[newKey][1], rootVar]
   }
@@ -97,6 +103,12 @@ exports.convertTypeInfo = function(typeInfo) {
 
 exports.setType = function(name, type, typeInfo, scope) {
   var [key, vars, rootVar] = getScope(name, Variables)
+  /*if (name == lex.THIS) {
+    var subType = exports.getObjectType(type)
+    if (subType) {
+      [type, typeInfo] = subType
+    }
+  }*/
   if (vars[key]) { // could not change scope
     vars[key][0] = type
   } else {
@@ -140,14 +152,12 @@ function getTypeHash(struct) {
 }
 
 exports.getStruct = function(struct) {
-  console.log('ge struct', struct);
   struct = exports.convertTypeInfo(struct) // tuple to link convert
   var hash = getTypeHash(struct)
   if (Structs[hash]) {
     return Structs[hash]
   }
   var ctxName = 'ctx'+CtxNum++
-  console.log('ctxName', ctxName);
   var out = 'typedef struct '+ctxName+' {\n';
   for(var name in struct) {
     var [type, typeInfo, scope] = struct[name]
@@ -181,7 +191,7 @@ exports.getArguments = function(link, operator) {
       args.push('void* blockCtx')
     }
   }
-  defArgs[lex.THIS] = ['$this', operator.setType]
+  defArgs[lex.THIS] = ['$this', operator.setType || operator.thisType]
   defArgs[lex.ARG] = ['$arg', operator.argType]
   for(var name in defArgs) {
     //var val = Variables[name]
@@ -319,7 +329,7 @@ return printf("${printOpts}\\n", ${params});
 }`, 'integer']
 }
 
-funcs.structEq = function(funcName, typeInfoA, typeInfoB, err) {
+funcs.structEq = function(funcName, typeInfoA, typeInfoB, op, err) {
   var argType = exports.getStruct(typeInfoB)
 
   var code = []
@@ -396,26 +406,36 @@ return true;
 }`, 'bool']
 }
 
-funcs.structEqCheck = function(funcName, typeA, typeB, err) {
+funcs.structEqCheck = function(funcName, typeA, typeB, op, err) {
   return structCheck('!=', false, funcName, typeA, typeB, err)
 }
-funcs.structNotEqCheck = function(funcName, typeA, typeB, err) {
+funcs.structNotEqCheck = function(funcName, typeA, typeB, op, err) {
   return structCheck('==', false, funcName, typeA, typeB, err)
 }
-funcs.structMoreCheck = function(funcName, typeA, typeB, err) {
+funcs.structMoreCheck = function(funcName, typeA, typeB, op, err) {
   return structCheck('<=', ['integer', 'string'], funcName, typeA, typeB, err)
 }
-funcs.structMoreEqCheck = function(funcName, typeA, typeB, err) {
+funcs.structMoreEqCheck = function(funcName, typeA, typeB, op, err) {
   return structCheck('<', ['integer', 'string'], funcName, typeA, typeB, err)
 }
-funcs.structLessCheck = function(funcName, typeA, typeB, err) {
+funcs.structLessCheck = function(funcName, typeA, typeB, op, err) {
   return structCheck('>=', ['integer', 'string'], funcName, typeA, typeB, err)
 }
-funcs.structLessEqCheck = function(funcName, typeA, typeB, err) {
+funcs.structLessEqCheck = function(funcName, typeA, typeB, op, err) {
   return structCheck('>', ['integer', 'string'], funcName, typeA, typeB, err)
 }
 
-funcs.structToArray = function(funcName, thisType, argType, err) {
+funcs.arrayInit = function(funcName, thisType, argType, op, err) {
+  console.log('type', funcName, thisType, argType, op);
+  var type = 'array_'+argType
+return [`${type} ${funcName}() {
+ ${type} ret;
+ kv_init(ret);
+ return ret;
+}`, 'array', 'integer']
+}
+
+funcs.structToArray = function(funcName, thisType, argType, op, err) {
     var args = [];
     var allType = false
     var len = thisType.length
@@ -442,7 +462,7 @@ return [`array_${allType} ${funcName}(${args}) {
 }`, 'array_'+allType]
 }
 
-funcs.ternarOp = function(funcName, typeA, typeB, err) {
+funcs.ternarOp = function(funcName, typeA, typeB, op, err) {
   var args = []
   if (typeB.length != 2) {
     err('right side contain '+typeB.length+' elements, 2 expected')
@@ -465,7 +485,7 @@ ${code}
 }`, typeB[0]]
 }
 
-exports.getFunc = function(name, typeA, typeB, onErr) {
+exports.getFunc = function(name, typeA, typeB, op, onErr) {
   if (!funcs[name]) {
     return [false]
   }
@@ -476,8 +496,7 @@ exports.getFunc = function(name, typeA, typeB, onErr) {
     return funcData
   }
   var funcName = name+(FuncNum++)
-  console.log('TYPEA', typeA);
-  var [code, retType] = funcs[name](funcName, typeA, typeB, onErr)
+  var [code, retType] = funcs[name](funcName, typeA, typeB, op, onErr)
   FuncCode += code+'\n\n'
   Functions[typeName] = [funcName, retType]
   return Functions[typeName]

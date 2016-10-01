@@ -15,7 +15,7 @@ exports.getNativeType = function(type, typeInfo) {
     case 'bool':
       return 'bool'
     case 'array_integer':
-      system.addGeneric('array_integer')
+      //system.addGeneric('array_integer')
       return 'array_integer'
     case 'array_string':
       //system.addGeneric('array_string') //used in env.c
@@ -29,9 +29,7 @@ exports.getNativeType = function(type, typeInfo) {
       break;
     default:
       if (type) {
-        console.log('type', type);
         var subType = system.getObjectType(type)
-        console.log('subtype', subType);
         if (subType) {
           return exports.getNativeType(subType[0], subType[1])
         }
@@ -75,6 +73,11 @@ exports.getType = function(a) {
   }
   var variable = a.match(/^([a-zA-Z_\-][a-zA-Z_\-0-9]*)$/)
   if (variable) {
+    if (variable[1] == lex.TRUE) {
+      return ['bool', lex.CONST, 1]
+    } else if (variable[1] == lex.FALSE) {
+      return ['bool', lex.CONST, 0]
+    }
     return [system.getType(a)[0], lex.VAR, variable[1]]
   }
   return ['undefined', lex.CONST, '']

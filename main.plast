@@ -1,11 +1,24 @@
 "std.plast"
 
-plast
-  this.test = "wow"
+cat
+  this.wow = "test"
 
-plast retTest
-  return this.test
+cat set string
+  this.wow = arg
+
+cat print
+  this.wow print
+
+//main
+//  c cat
+//  c set "nooo"
+//  c print
+
+//  a [] cat
+
 
 main
-  plast plast
-  plast retTest print
+  a [] integer
+  a push 2
+  a push 8
+  a print

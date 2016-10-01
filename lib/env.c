@@ -9,6 +9,7 @@
 bool condBool = true;
 typedef void (*block)(void* ctx);
 typedef kvec_t(sds) array_string;
+typedef kvec_t(int) array_integer;
 
 sds _strFromFloat(float a) {
   return sdscatprintf(sdsempty(), "%g", a);
@@ -20,7 +21,7 @@ sds _strFromFile(sds fileName) {
   size_t n = 0;
   int c;
 
-  if (file == NULL) return NULL; //could not open file
+  if (file == NULL) return ""; //could not open file
   fseek(file, 0, SEEK_END);
   long f_size = ftell(file);
   fseek(file, 0, SEEK_SET);
@@ -48,17 +49,6 @@ array_string _strTok(sds str, sds delim) {
     kv_push(sds, array, sdsdup(tokens[j]));
   }
   sdsfreesplitres(tokens,count);
-
-
-
-  /*char *ch;
-  char *s = strdup(str);
-  ch = strtok(s, delim);
-
-  while (ch != NULL) {
-    kv_push(char*, array, ch);
-    ch = strtok(NULL, delim);
-  }*/
   return array;
 }
 

@@ -44,7 +44,18 @@ function prepareWords(words, lineN, inner, file) {
     if (word === '(') {
       res.push(prepareWords(words, lineN, ')'))
     } else if (word === '[') {
-      res.push([prepareWords(words, lineN, ']'), 'array'])
+      var arrCont = prepareWords(words, lineN, ']')
+      if (!arrCont.length) {
+        /*var arrType = words.shift()
+        if (!arrType) {
+          err('empty array initilized without type', lineN, file)
+        }*/
+        //res.push([undefined, 'array_'+arrType])
+        res.push('[]')
+        console.log('hh', res);
+      } else {
+        res.push([arrCont, 'array'])
+      }
     } else if (word === inner) {
       return res
     } else {
@@ -132,6 +143,9 @@ function getOperator(typeA, op, typeB, lineN, strict) {
   if (!strict) {
     if (!operator) {
       operator = Operators[typeA][op+' *']
+    }
+    if (!operator) {
+      operator = Operators[typeA][op+' type']
     }
     if (!operator) {
       operator = Operators['*'][op+' *']
@@ -270,7 +284,7 @@ function parseTriple(tokens, level, lineN) {
   }
   for(var i in tokens) {
     var word = tokens[i]
-    if (Array.isArray(word)) {
+    if (Array.isArray(word) && word.length) {
       var innerTriple = parseTriple(word, level, lineN)
       tokens[i] = compileTriple(innerTriple, true, level, lineN)
     }
@@ -530,7 +544,11 @@ function compileTriple(triple, inner, level, ln) {
     setType = typeB
   }
   if (setType) {
-    setVarType(a, typeA, setType, typeInfoB, ln)
+    if (setType === 'array') {
+      setVarType(a, typeA, setType, b, ln)
+    } else {
+      setVarType(a, typeA, setType, typeInfoB, ln)
+    }
   }
   if (setArgType) {
     setVarType(b, typeB, setArgType, typeInfoB, ln)
@@ -541,8 +559,12 @@ function compileTriple(triple, inner, level, ln) {
     code = code.replace(/(&)?(\*)?\$([a-zA-Z_0-9]+)(\()?/g, function(match, link, pointer, el, isFunc) {
       if (isFunc) {
         var tA = getTypeInfo(a, typeA, typeInfoA)
-        var tB = getTypeInfo(b, typeB, typeInfoB)
-        var [funcName, newType] = system.getFunc(el, tA, tB, function(text) {
+        if (operator.argType == 'type') {
+          tB = b
+        } else {
+          var tB = getTypeInfo(b, typeB, typeInfoB)
+        }
+        var [funcName, newType] = system.getFunc(el, tA, tB, op, function(text) {
           err(text, ln)
         })
         if (newType) {
@@ -553,6 +575,10 @@ function compileTriple(triple, inner, level, ln) {
         }
         return funcName+isFunc
       } else if (el == 'thisType') {
+        console.log('here_ahh', typeA);
+        if (typeA == 'array') {
+          console.log('here_here', a, op, b, typeInfoA, typeB, typeInfoB);
+        }
         return typeA
       } else if (el == 'thisName') {
         return a
@@ -694,12 +720,12 @@ function compileOperator(operator) {
   }
   operator.state = 1
 
-  system.contextPush(operator)
+  system.contextPush(CurOperator)
   CurOperator = operator
 
   //if (operator.thisType != 'variable') {
   // any way set up this
-    system.setType(lex.THIS, operator.thisType, false, lex.SCOPE_ARG)
+  system.setType(lex.THIS, operator.thisType, false, lex.SCOPE_ARG)
   //}
   if (operator.argType && operator.argType != 'undefined') {
     system.setType(lex.ARG, operator.argType, false, lex.SCOPE_ARG)

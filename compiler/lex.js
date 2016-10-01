@@ -10,3 +10,6 @@ exports.RETURN = 'return'
 exports.ARG = 'arg'
 
 exports.SCOPE_ARG = 1;
+
+exports.TRUE = 'true'
+exports.FALSE = 'false'

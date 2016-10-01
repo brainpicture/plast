@@ -1,11 +1,39 @@
 "std.plast"
 
+string getPlastTokens
+  tokens = [] string
+  l = ""
+  this each c
+    c == " "
+      l != ""
+        tokens push l
+        l = ""
+    else
+      l += c
+  l != ""
+    tokens push l
+  return tokens
+
+
+
+//plastOperator
+//  thisName, opName, argName = arg
+//  this.this = thisName
+//  this.name = opName
+//  this.arg = argName
+//  this.lines = [] line
+
+//line
+//  this.line = ""
+//  this.block = [] line
+
 plast
   this.file = ""
   this.lineNum = 0
 
 plast err string
   "Line" + this.lineNum + ": " + arg print
+  return false
 
 plast compile string
   this.file = arg
@@ -13,12 +41,16 @@ plast compile string
   code tok "\n" each line
     this.lineNum += 1
     shift = line getLeftShift
-    line+";" print
+    tokens = line getPlastTokens
+    tokens print
     shift % 2 != 0
       return this err "incorrect line shift"
-    "over" print
-
+    //shift == 0
+    //  "new "+line print
+    //else
+    //  "print" print
+  return true
 
 main
   plast plast
-  plast compile "tests/1.plast"
+  plast compile "main.plast"
