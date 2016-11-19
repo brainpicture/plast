@@ -1,26 +1,39 @@
 #include "lib/env.c"
 
 typedef struct ctx0 {
-  array_integer a;
 } ctx0;
+
+typedef struct ctx1 {
+  sds name;
+} ctx1;
+
+void func_variable_karma(ctx1 *this);
+typedef struct ctx2 {
+} ctx2;
+
+sds func_karma_getName(ctx1 *this);
+typedef struct ctx3 {
+  ctx1 a;
+} ctx3;
 
 void func_undefined_main();
 
-array_integer arrayInit0() {
- array_integer ret;
- kv_init(ret);
- return ret;
+void func_variable_karma(ctx1 *this) {
+struct ctx0 ctx;
+(*this).name = sdsnew("karma");
+
+}
+
+sds func_karma_getName(ctx1 *this) {
+struct ctx2 ctx;
+return (*this).name;
+
 }
 
 void func_undefined_main() {
-struct ctx0 ctx;
-ctx.a = arrayInit0();
-kv_push(int, ctx.a, 2);
-kv_push(int, ctx.a, 8);
-condBool = (kv_pop(ctx.a) == 8); if (condBool) {printf("%s\n", sdsnew("ok"));
-};
-if (!condBool) {printf("%s\n", sdsnew("fail"));
-};
+struct ctx3 ctx;
+func_variable_karma(&ctx.a);
+printf("%s\n", func_karma_getName(&ctx.a));
 
 }
 
