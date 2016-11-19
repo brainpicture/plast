@@ -56,7 +56,7 @@ string != string
     `condBool = (strcmp($this, $arg) != 0); if (condBool) {$block}` bool
 
 string tok string
-  `_strTok($this, $arg)` array_string
+  `_strTok($this, $arg)` array:string
 
 string trim string
   `sdstrim($this, $arg)`
@@ -302,13 +302,13 @@ tuple array
 
 
 variable [] type
-  `$this = $arrayInit()` array array
+  `$this = $arrayInit()` array:$type array
 
 array push *
   `kv_push(int, $this, $arg)`
 
 array each variable
-  `{$thisType x = $this; int kvs = kv_size(x); for(int i = 0; i < kvs; i++) {$arg = kv_a($thisSubType, x, i); $block}}` undefined integer
+  `{$thisType x = $this; int kvs = kv_size(x); for(int i = 0; i < kvs; i++) {$arg = kv_a($thisSubType, x, i); $block}}` undefined $thisSubType
 
 array print
   out = ""
@@ -319,8 +319,8 @@ array print
       out += ", " + item
   out print
 
-undefined array_integer
-  `$arrayInit()` array_integer
+undefined array
+  `$arrayInit()` array
 
 tuple getType
   `"tuple"` string
@@ -348,44 +348,14 @@ struct getType
 
 // array_integer
 
-variable = array_integer
-  `$this = $arg` array_integer array_integer
+variable = array
+  `$this = $arg` array:$thisSubType array
 
-variable = array_string
-  `$this = $arg` array_string array_string
+array push thisSubType
+  `kv_push($thisSubType, $this, $arg)`
 
-array_integer each variable
-  `{$thisType x = $this; int kvs = kv_size(x); for(int i = 0; i < kvs; i++) {$arg = kv_a($thisSubType, x, i); $block}}` undefined integer
-
-array_string each variable
-  `{$thisType x = $this; int kvs = kv_size(x); for(int i = 0; i < kvs; i++) {$arg = kv_a($thisSubType, x, i); $block}}` undefined string
-
-array_integer push integer
-  `kv_push(int, $this, $arg)`
-
-array_string push string
-  `kv_push(sds, $this, $arg)`
-
-array_integer pop
-  `kv_pop($this)` integer
-
-array_integer print
-  out = ""
-  this each item
-    out == ""
-      out += item
-    else
-      out += ", " + item
-  out print
-
-array_string print
-  out = ""
-  this each item
-    out == ""
-      out += item
-    else
-      out += ", " + item
-  out print
+array pop
+  `kv_pop($this)` $thisSubType
 
 // files
 string readFileSync

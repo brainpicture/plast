@@ -1,0 +1,10 @@
+"std.plast"
+
+main
+  a = [] integer
+  a push 2
+  a push 8
+  a pop == 8
+    "ok" print
+  else
+    "fail" print

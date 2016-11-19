@@ -1,0 +1,15 @@
+"std.plast"
+
+plast
+  this.test = "wow"
+  this.real = "yes"
+
+plast retTest
+  return this.real
+
+main
+  plast plast
+  plast retTest == "yes"
+    "ok" print
+  else
+    "fail" print

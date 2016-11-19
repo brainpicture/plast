@@ -1,24 +1,12 @@
 "std.plast"
 
-cat
-  this.wow = "test"
-
-cat set string
-  this.wow = arg
-
-cat print
-  this.wow print
-
-//main
-//  c cat
-//  c set "nooo"
-//  c print
-
-//  a [] cat
-
-
 main
-  a [] integer
-  a push 2
-  a push 8
-  a print
+  a = [10,12,32]
+  a push 41
+  a pop != 41
+    "fail" print
+  else
+    a pop == 32
+      "ok" print
+    else
+      "fail" print

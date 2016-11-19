@@ -24,6 +24,13 @@ exports.getNativeType = function(type, typeInfo) {
       return system.getStruct(typeInfo)
     case 'tuple':
       return system.getStruct(typeInfo)
+    case 'array':
+      if (!typeInfo || !typeInfo.length) {
+        console.log('array_passing error', type, typeInfo);
+        throw new Error()
+      }
+      var typeStr = typeInfo[0]
+      return 'array_'+typeStr
     case 'undefined':
       return ''
       break;
@@ -36,6 +43,8 @@ exports.getNativeType = function(type, typeInfo) {
       }
       break;
   }
+  console.log('could not get native type of', type, typeInfo);
+  throw new Error()
   return ''
 }
 

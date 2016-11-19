@@ -52,7 +52,6 @@ function prepareWords(words, lineN, inner, file) {
         }*/
         //res.push([undefined, 'array_'+arrType])
         res.push('[]')
-        console.log('hh', res);
       } else {
         res.push([arrCont, 'array'])
       }
@@ -69,7 +68,6 @@ function prepareWords(words, lineN, inner, file) {
 }
 
 function getTypeInfo(name, type, typeInfo) {
-
   if (type == 'tuple' || type == 'struct') {
     if (typeInfo) {
       typeInfo = system.convertTypeInfo(typeInfo)
@@ -78,12 +76,19 @@ function getTypeInfo(name, type, typeInfo) {
       var [type, typeInfo] = system.getType(name)
       return typeInfo
     }
+  } else if (type == 'array') {
+    if (typeInfo) {
+      // prevent overriding if from struct not variable
+      return typeInfo;
+    }
+    var [type, typeInfo] = system.getType(name)
+    return typeInfo
   } else {
     var subType = system.getObjectType(type)
     if (subType) {
       return getTypeInfo(name, subType[0], subType[1])
     }
-    return type
+    return undefined
   }
 
 }
@@ -94,6 +99,7 @@ function setVarType(varName, oldType, setType, typeInfo, ln) {
     if (varName == lex.THIS) {
       CurOperator.setType = CurOperator.name
       CurOperator.thisType = setType
+      CurOperator.thisTypeInfo = typeInfo
     } else if (rootVar == lex.THIS) {
       CurOperator.setType = CurOperator.name
       CurOperator.thisType = 'struct'
@@ -111,7 +117,7 @@ function getTokens(line, lineN, file) {
   if (!line) {
     return false
   }
-  var words = line.match(/([0-9]+[0-9\.]+|[a-zA-Z0-9_]+[a-zA-Z0-9_]*|"[^"]*"|'[^']*'|`[^`]+`|[\+\-\\*\/=\^&!><:;,\|\?~\.%]+|[\(\)\[\]])/g)
+  var words = line.match(/([0-9]+[0-9\.]+|[a-zA-Z0-9_$]+[a-zA-Z0-9_$]*|"[^"]*"|'[^']*'|`[^`]+`|[\+\-\\*\/=\^&!><:;,\|\?~\.%_]+|[\(\)\[\]])/g)
   var words = prepareWords(words, lineN, false, file)
   var tokens = parseWords(words, lineN)
   return tokens
@@ -146,6 +152,9 @@ function getOperator(typeA, op, typeB, lineN, strict) {
     }
     if (!operator) {
       operator = Operators[typeA][op+' type']
+      if (operator) {
+        operator.argIsType = true
+      }
     }
     if (!operator) {
       operator = Operators['*'][op+' *']
@@ -210,6 +219,27 @@ function isNative(line) {
   return false
 }
 
+function determineType(type, typeInfoA, typeInfoB, ln) { // TMP will need
+  if (type && type.substr(0, 1) == '$') {
+    switch(type) {
+      case '$thisSubType':
+        if (!typeInfoA) {
+          err(type+' has no typeInfo for $thisSubType', ln)
+        }
+        if (Array.isArray(typeInfoA)) {
+          type = typeInfoA[0]
+        } else {
+          type = typeInfoA
+        }
+        break;
+      default:
+        err("undefined "+type+" native type", ln)
+        break;
+    }
+  }
+  return type
+}
+
 function parseNativeOperator(structure, operator, level) {
   while(structure.length) {
     var [shift, line, lineN] = structure.shift()
@@ -236,6 +266,14 @@ function parseNativeOperator(structure, operator, level) {
     operator.code = codeRaw[1]
     operator.native = true
     operator.type = tokens.shift() || 'undefined'
+    if (tokens[0] == ':') {
+      tokens.shift() // dry it away
+      var typeInfo = tokens.shift()
+      if (!typeInfo) {
+        err("no "+operator.type+" type provided after \":\"", lineN)
+      }
+      operator.typeInfo = [typeInfo]
+    }
     if (tokens.length) {
       if (operator.thisType == 'variable') {
         operator.setType = tokens.shift() || 'undefined'
@@ -370,6 +408,23 @@ function buildBlocks(structure, level) {
   return block
 }
 
+
+function genFuncName(op, typeA, typeB) {
+  var name = ['func']
+  if (typeA == 'array') {
+    name.push('$thisArrayType')
+  } else {
+    name.push(typeA)
+  }
+  name.push(op)
+  if (typeB == 'array') {
+    name.push('$argArrayType')
+  } else if (typeB && typeB != 'undefined') {
+    name.push(typeB)
+  }
+  return name.join('_')
+}
+
 function getOperators(structure, fileName) {
   var innerLine = false
   while(structure.length) {
@@ -403,13 +458,14 @@ function getOperators(structure, fileName) {
       var [typeA, op, typeB] = tokens
       var options = {
         name: op,
-        func: 'func_'+typeA+'_'+op+'_'+typeB,
+        func: genFuncName(op, typeA, typeB),
         lineN: lineN,
         file: fileName,
         type: 'undefined',
         thisType: typeA,
         argType: typeB,
-        lines: []
+        lines: [],
+        state: {}
       }
       var operator = getOperator(typeA, op, typeB, lineN, true)
       if (operator) {
@@ -469,6 +525,8 @@ function compileLines(lines, file) {
 }
 
 function compileTriple(triple, inner, level, ln) {
+  var typeInfoA = false;
+  var typeInfoB = false;
   var [a, op, b, codeBlock] = triple
   if (!inner && a == 'undefined' && op == 'block') {
     var code = 'blockCb(blockCtx);'
@@ -506,6 +564,7 @@ function compileTriple(triple, inner, level, ln) {
   } else {
     var operator = getOperator(typeA, op, typeB, ln)
   }
+
   if (typeA == 'undefined' && op == lex.RETURN) { // set type on return operator
     if (CurOperator.type != 'undefined' && CurOperator.type != typeB) {
       err('Couldn\'t set return type as '+typeB+', it\'s already deffined as '+CurOperator.type+' at line '+CurOperator.returnLn, ln)
@@ -519,11 +578,15 @@ function compileTriple(triple, inner, level, ln) {
   if (!operator) {
     err('Operator not found: '+typeA+' '+op+(typeB && typeB != 'undefined' && typeB != 'variable' ? ' '+typeB : ''), ln)
   }
-  if (!operator.state) {
-    compileOperator(operator)
+  if (operator.argIsType && operator.typeInfo[0] == '$type'){
+    operator.typeInfo[0] = b
   }
+  typeInfoA = getTypeInfo(a, typeA, typeInfoA)
+  typeInfoB = getTypeInfo(b, typeB, typeInfoB)
+
+  var opState = compileOperator(operator, typeInfoA, typeInfoB)
   if (operator.type == 'undefined') {
-    if (operator.state == 1) {
+    if (opState == 1) {
       err('operator ret type could not determined before recursion called from line '+ln, operator.lineN)
     }
   }
@@ -540,23 +603,74 @@ function compileTriple(triple, inner, level, ln) {
     var setArgType = operator.setArgType
   }
 
+  setType = determineType(setType, typeInfoA, typeInfoB, ln)
+  type = determineType(type, typeInfoA, typeInfoB, ln)
+
   if (setType == '*') {
     setType = typeB
   }
   if (setType) {
     if (setType === 'array') {
-      setVarType(a, typeA, setType, b, ln)
+      // typeInfoB should have all information even if itgenerated from struct
+      //setVarType(a, typeA, setType, [b], ln)
+      var setTypeInfo = operator.typeInfo
+
+      if (!setTypeInfo) {
+        setTypeInfo = typeInfoB;
+      }
+      if (!setTypeInfo) {
+        err('variable "'+a+'" setting type as array without subtype', ln)
+      }
+      setVarType(a, typeA, setType, setTypeInfo, ln)
     } else {
       setVarType(a, typeA, setType, typeInfoB, ln)
     }
   }
   if (setArgType) {
+    setArgType = determineType(setArgType, typeInfoA, typeInfoB, ln)
     setVarType(b, typeB, setArgType, typeInfoB, ln)
   }
 
+  var typeInfo = operator.typeInfo || []
+
   if (code) {
     var declared = {}
-    code = code.replace(/(&)?(\*)?\$([a-zA-Z_0-9]+)(\()?/g, function(match, link, pointer, el, isFunc) {
+
+    code = code.replace(/\$([a-zA-Z]+)/g, function(match, word) {
+      switch(word) {
+        case 'thisArrayType':
+          if (!typeInfoA || typeInfoA.length == 0) {
+            err('this "'+typeA+'" has no type', ln)
+          }
+          return types.getNativeType('array', typeInfoA)
+        case 'argArrayType':
+          if (!typeInfoB || typeInfoB.length == 0) {
+            err('arg "'+typeB+'" has no type', ln)
+          }
+          return types.getNativeType('array', typeInfoB)
+        case 'thisSubType':
+          if (!typeInfoA || typeInfoA.length == 0) {
+            err('this "'+typeA+'" has no type', ln)
+          }
+          var retSubType = types.getNativeType(typeInfoA[0])
+          if (!retSubType) {
+            err('this "'+typeA + '" has no type', ln)
+          }
+          return retSubType
+        case 'argSubType':
+          if (!typeInfoB || typeInfoB.length == 0) {
+            err('arg "'+typeB+'" has no type', ln)
+          }
+          var retSubType = types.getNativeType(typeInfoB[0])
+          if (!retSubType) {
+            err('arg "'+typeB+'"  has no type', ln)
+          }
+          return retSubType
+        default:
+          return '$'+word;
+      }
+    })
+    code = code.replace(/(&)?(\*)?\$([a-zA-Z0-9]+)(\()?/g, function(match, link, pointer, el, isFunc) {
       if (isFunc) {
         var tA = getTypeInfo(a, typeA, typeInfoA)
         if (operator.argType == 'type') {
@@ -564,22 +678,28 @@ function compileTriple(triple, inner, level, ln) {
         } else {
           var tB = getTypeInfo(b, typeB, typeInfoB)
         }
-        var [funcName, newType] = system.getFunc(el, tA, tB, op, function(text) {
+        var [funcName, newType, newTypeInfo] = system.getFunc(el, tA, tB, op, function(text) {
           err(text, ln)
         })
         if (newType) {
           type = newType
+        }
+        if (newTypeInfo) {
+          typeInfo = newTypeInfo
         }
         if (!funcName) {
           err('unknown C function $'+el, ln)
         }
         return funcName+isFunc
       } else if (el == 'thisType') {
-        console.log('here_ahh', typeA);
         if (typeA == 'array') {
           console.log('here_here', a, op, b, typeInfoA, typeB, typeInfoB);
+          if (!typeInfoA) {
+            err('array "'+a+'" has unknown subtype', ln)
+          }
         }
-        return typeA
+        return types.getNativeType(typeA, typeInfoA)
+        //return typeA
       } else if (el == 'thisName') {
         return a
       } else if (el == 'argName') {
@@ -597,9 +717,6 @@ function compileTriple(triple, inner, level, ln) {
         } else {
           return codeBlock || ''
         }
-      } else if (el == 'thisSubType') {
-        var subType = typeA.split('_').pop()
-        return types.getNativeType(subType)
       } else {
         err('incorrect C token '+match, ln)
       }
@@ -642,7 +759,6 @@ function compileTriple(triple, inner, level, ln) {
     }
   }
 
-  var typeInfo = []
   var nameA = false
 
 
@@ -678,6 +794,10 @@ function compileTriple(triple, inner, level, ln) {
     var [type, typeInfo] = system.getStructType(a, b)
   }
 
+  if (type == 'array' && (!typeInfo || typeInfo.length == 0)) {
+    err('['+operator.name+'] array type is undefined', ln)
+  }
+
   return [type, code, precode, typeInfo]
 }
 
@@ -702,33 +822,59 @@ function compileMain(lines, level) {
   return codeAll
 }
 
-function compileOperator(operator) {
+function compileOperator(operator, typeInfoA, typeInfoB) {
+  var suffix = [typeInfoA || '']
+  if (typeInfoB) {
+    suffix.push(typeInfoB)
+  }
+  suffix = suffix.join('_')
+  if (operator.state[suffix]) {
+    return operator.state[suffix];
+  }
   var lines = operator.lines
   if (!lines.length) {
     if (operator.code) {
-      operator.state = 2
+      operator.state[suffix] = 2
       return
     } else {
       err('operator undeclared', operator.lineN)
     }
   }
-  if (operator.state == 1) {
+  if (operator.state[suffix] == 1) {
     err('recursive call error')
   }
-  if (operator.state) {
-    return
+  if (operator.state[suffix]) {
+    return operator.state[suffix]
   }
-  operator.state = 1
+  operator.state[suffix] = 1
+
+  var funcName = operator.func
+  funcName = funcName.replace(/\$([a-zA-Z]+)/g, function(match, word) {
+    switch(word) {
+      case 'thisArrayType':
+        return 'array_'+typeInfoA
+        break;
+      case 'argArrayType':
+        return 'array_'+typeInfoB
+        break;
+      default:
+        err('unsupported function name for operator: '+word, operator.lineN)
+        break;
+    }
+  })
 
   system.contextPush(CurOperator)
   CurOperator = operator
 
+  operator.thisTypeInfo = typeInfoA || false
+  operator.argTypeInfo = typeInfoB || false
+
   //if (operator.thisType != 'variable') {
   // any way set up this
-  system.setType(lex.THIS, operator.thisType, false, lex.SCOPE_ARG)
+  system.setType(lex.THIS, operator.thisType, typeInfoA || false, lex.SCOPE_ARG)
   //}
   if (operator.argType && operator.argType != 'undefined') {
-    system.setType(lex.ARG, operator.argType, false, lex.SCOPE_ARG)
+    system.setType(lex.ARG, operator.argType, typeInfoB || false, lex.SCOPE_ARG)
   }
 
   var prevOperator = CurOperator
@@ -739,7 +885,7 @@ function compileOperator(operator) {
 
   var block = system.getDefines() + "\n" + output
 
-  operator.state = 2
+  operator.state[suffix] = 2
 
   if (operator.thisType == 'variable' && !operator.setType) {
     err('[this] should be set, in variable based operators: '+operator.thisType+' '+operator.name+' '+operator.argType, CurOperator.lineN)
@@ -749,7 +895,7 @@ function compileOperator(operator) {
   }
   var args = system.getArguments(false, operator)
 
-  system.func(operator.func, block, args, operator.type)+"\n"
+  system.func(funcName, block, args, operator.type)+"\n"
 
   CurOperator = system.contextPop()
 }

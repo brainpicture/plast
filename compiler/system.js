@@ -111,6 +111,8 @@ exports.setType = function(name, type, typeInfo, scope) {
   }*/
   if (vars[key]) { // could not change scope
     vars[key][0] = type
+  } else if (type == 'array') {
+    vars[key] = [type, typeInfo, scope || 0]
   } else {
     vars[key] = [type, exports.convertTypeInfo(typeInfo), scope || 0]
   }
@@ -191,18 +193,18 @@ exports.getArguments = function(link, operator) {
       args.push('void* blockCtx')
     }
   }
-  defArgs[lex.THIS] = ['$this', operator.setType || operator.thisType]
-  defArgs[lex.ARG] = ['$arg', operator.argType]
+  defArgs[lex.THIS] = ['$this', operator.setType || operator.thisType, operator.thisTypeInfo || false]
+  defArgs[lex.ARG] = ['$arg', operator.argType, operator.argTypeInfo || false]
   for(var name in defArgs) {
     //var val = Variables[name]
     //if (val) {
-    var [replName, type] = defArgs[name]
+    var [replName, type, typeInfo] = defArgs[name]
     if (link) {
       if (type != 'undefined') {
         args.push('&'+replName)
       }
     } else {
-      var typeCode = types.toNative(type, false, name, true)
+      var typeCode = types.toNative(type, typeInfo, name, true)
       if (typeCode) {
         args.push(typeCode)
       }
@@ -432,7 +434,7 @@ return [`${type} ${funcName}() {
  ${type} ret;
  kv_init(ret);
  return ret;
-}`, 'array', 'integer']
+}`, 'array', ['integer']]
 }
 
 funcs.structToArray = function(funcName, thisType, argType, op, err) {
@@ -459,7 +461,7 @@ return [`array_${allType} ${funcName}(${args}) {
  kv_init(ret);
  ${retLines}
  return ret;
-}`, 'array_'+allType]
+}`, 'array', [allType]]
 }
 
 funcs.ternarOp = function(funcName, typeA, typeB, op, err) {
@@ -496,8 +498,8 @@ exports.getFunc = function(name, typeA, typeB, op, onErr) {
     return funcData
   }
   var funcName = name+(FuncNum++)
-  var [code, retType] = funcs[name](funcName, typeA, typeB, op, onErr)
+  var [code, retType, retTypeInfo] = funcs[name](funcName, typeA, typeB, op, onErr)
   FuncCode += code+'\n\n'
-  Functions[typeName] = [funcName, retType]
+  Functions[typeName] = [funcName, retType, retTypeInfo]
   return Functions[typeName]
 }

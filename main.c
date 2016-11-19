@@ -1,41 +1,44 @@
 #include "lib/env.c"
 
 typedef struct ctx0 {
-  sds out;
-  int item;
 } ctx0;
 
-void func_array_print_undefined();
 typedef struct ctx1 {
-  ;
+  sds test;
+  sds real;
 } ctx1;
 
-void func_undefined_main_undefined();
+void func_variable_plast(ctx1 *this);
+typedef struct ctx2 {
+} ctx2;
 
-array_integer arrayInit0() {
- array_integer ret;
- kv_init(ret);
- return ret;
-}
+sds func_plast_retTest(ctx1 *this);
+typedef struct ctx3 {
+  ctx1 plast;
+} ctx3;
 
-void func_array_print_undefined() {
+void func_undefined_main();
+
+void func_variable_plast(ctx1 *this) {
 struct ctx0 ctx;
-ctx.out = sdsnew("");
-{array x = (*this); int kvs = kv_size(x); for(int i = 0; i < kvs; i++) {ctx.item = kv_a(, x, i); condBool = (strcmp(ctx.out, sdsnew("")) == 0); if (condBool) {ctx.out = sdscatsds(ctx.out, sdsfromlonglong((long long)ctx.item));
-};
-if (!condBool) {ctx.out = sdscatsds(ctx.out, sdscatsds(sdsnew(", "), sdsfromlonglong((long long)ctx.item)));
-};
-}};
-printf("%s\n", ctx.out);
+(*this).test = sdsnew("wow");
+(*this).real = sdsnew("yes");
 
 }
 
-void func_undefined_main_undefined() {
-struct ctx1 ctx;
-ctx.a = arrayInit0();
-kv_push(int, ctx.a, 2);
-kv_push(int, ctx.a, 8);
-func_array_print_undefined(&ctx.a);
+sds func_plast_retTest(ctx1 *this) {
+struct ctx2 ctx;
+return (*this).real;
+
+}
+
+void func_undefined_main() {
+struct ctx3 ctx;
+func_variable_plast(&ctx.plast);
+condBool = (strcmp(func_plast_retTest(&ctx.plast), sdsnew("yes")) == 0); if (condBool) {printf("%s\n", sdsnew("ok"));
+};
+if (!condBool) {printf("%s\n", sdsnew("fail"));
+};
 
 }
 
@@ -43,5 +46,5 @@ func_array_print_undefined(&ctx.a);
 
 int main() {
 
-func_undefined_main_undefined();
+func_undefined_main();
 }
