@@ -428,7 +428,6 @@ funcs.structLessEqCheck = function(funcName, typeA, typeB, op, err) {
 }
 
 funcs.arrayInit = function(funcName, thisType, argType, op, err) {
-  console.log('type', funcName, thisType, argType, op);
   var type = 'array_'+argType
 return [`${type} ${funcName}() {
  ${type} ret;

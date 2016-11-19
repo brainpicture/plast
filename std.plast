@@ -349,7 +349,7 @@ struct getType
 // array_integer
 
 variable = array
-  `$this = $arg` array:$thisSubType array
+  `$this = $arg` array:$argSubType array
 
 array push thisSubType
   `kv_push($thisSubType, $this, $arg)`

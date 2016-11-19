@@ -1,7 +1,7 @@
 "std.plast"
 
 main
-  a = [] integer
+  a [] integer
   a push 2
   a push 8
   a pop == 8

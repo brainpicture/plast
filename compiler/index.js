@@ -220,6 +220,7 @@ function isNative(line) {
 }
 
 function determineType(type, typeInfoA, typeInfoB, ln) { // TMP will need
+if (type)
   if (type && type.substr(0, 1) == '$') {
     switch(type) {
       case '$thisSubType':
@@ -230,6 +231,16 @@ function determineType(type, typeInfoA, typeInfoB, ln) { // TMP will need
           type = typeInfoA[0]
         } else {
           type = typeInfoA
+        }
+        break;
+      case '$argSubType':
+        if (!typeInfoB) {
+          err(type+' has no typeInfo for $argSubType', ln)
+        }
+        if (Array.isArray(typeInfoB)) {
+          type = typeInfoB[0]
+        } else {
+          type = typeInfoB
         }
         break;
       default:
@@ -534,7 +545,8 @@ function compileTriple(triple, inner, level, ln) {
   }
   var precode = ''
   if (Array.isArray(a)) {
-    var [typeA, codeA, precodeA, typeInfoA] = a
+    var [typeA, codeA, precodeA, typeRawInfoA] = a
+
     precode += precodeA
     var lexA = lex.CONST
   } else {
@@ -544,7 +556,7 @@ function compileTriple(triple, inner, level, ln) {
 
   if (b) {
     if (Array.isArray(b)) {
-      var [typeB, codeB, precodeB, typeInfoB] = b
+      var [typeB, codeB, precodeB, typeRawInfoB] = b
       precode += precodeB
       var lexB = lex.CONST
     } else {
@@ -581,8 +593,9 @@ function compileTriple(triple, inner, level, ln) {
   if (operator.argIsType && operator.typeInfo[0] == '$type'){
     operator.typeInfo[0] = b
   }
-  typeInfoA = getTypeInfo(a, typeA, typeInfoA)
-  typeInfoB = getTypeInfo(b, typeB, typeInfoB)
+
+  typeInfoA = getTypeInfo(a, typeA, typeRawInfoA)
+  typeInfoB = getTypeInfo(b, typeB, typeRawInfoB)
 
   var opState = compileOperator(operator, typeInfoA, typeInfoB)
   if (operator.type == 'undefined') {
@@ -613,7 +626,7 @@ function compileTriple(triple, inner, level, ln) {
     if (setType === 'array') {
       // typeInfoB should have all information even if itgenerated from struct
       //setVarType(a, typeA, setType, [b], ln)
-      var setTypeInfo = operator.typeInfo
+      var setTypeInfo = determineType(operator.typeInfo[0], typeInfoA, typeInfoB, ln)
 
       if (!setTypeInfo) {
         setTypeInfo = typeInfoB;
@@ -621,7 +634,7 @@ function compileTriple(triple, inner, level, ln) {
       if (!setTypeInfo) {
         err('variable "'+a+'" setting type as array without subtype', ln)
       }
-      setVarType(a, typeA, setType, setTypeInfo, ln)
+      setVarType(a, typeA, setType, [setTypeInfo], ln)
     } else {
       setVarType(a, typeA, setType, typeInfoB, ln)
     }
@@ -693,7 +706,6 @@ function compileTriple(triple, inner, level, ln) {
         return funcName+isFunc
       } else if (el == 'thisType') {
         if (typeA == 'array') {
-          console.log('here_here', a, op, b, typeInfoA, typeB, typeInfoB);
           if (!typeInfoA) {
             err('array "'+a+'" has unknown subtype', ln)
           }
@@ -761,14 +773,14 @@ function compileTriple(triple, inner, level, ln) {
 
   var nameA = false
 
-
   if (type == 'struct' && op == ':') {
     var typeInfoObj = {}
     typeInfoObj[a] = typeB
     typeInfo.push(typeInfoObj)
   } else if (type == 'struct' || type == 'tuple') {
     if (typeA == 'struct' || typeA == 'tuple') {
-      typeInfo.push.apply(typeInfo, typeInfoA)
+      //typeInfo = typeInfoA
+      typeInfo.push.apply(typeInfo, typeRawInfoA)
     } else if (typeA == 'variable') {
       var typeInfoObj = {}
       typeInfoObj[a] = typeA
@@ -777,7 +789,7 @@ function compileTriple(triple, inner, level, ln) {
       typeInfo.push(typeA)
     }
     if (typeB == 'struct' || typeB == 'tuple') {
-      typeInfo.push.apply(typeInfo, typeInfoB)
+      typeInfo.push.apply(typeInfo, typeRawInfoB)
     } else if (typeB == 'variable') {
       if (type == 'tuple') {
         var typeInfoObj = {}

@@ -1,41 +1,23 @@
 #include "lib/env.c"
 
 typedef struct ctx0 {
+  array_integer a;
 } ctx0;
-
-typedef struct ctx1 {
-  sds test;
-  sds real;
-} ctx1;
-
-void func_variable_plast(ctx1 *this);
-typedef struct ctx2 {
-} ctx2;
-
-sds func_plast_retTest(ctx1 *this);
-typedef struct ctx3 {
-  ctx1 plast;
-} ctx3;
 
 void func_undefined_main();
 
-void func_variable_plast(ctx1 *this) {
-struct ctx0 ctx;
-(*this).test = sdsnew("wow");
-(*this).real = sdsnew("yes");
-
-}
-
-sds func_plast_retTest(ctx1 *this) {
-struct ctx2 ctx;
-return (*this).real;
-
+array_integer arrayInit0() {
+ array_integer ret;
+ kv_init(ret);
+ return ret;
 }
 
 void func_undefined_main() {
-struct ctx3 ctx;
-func_variable_plast(&ctx.plast);
-condBool = (strcmp(func_plast_retTest(&ctx.plast), sdsnew("yes")) == 0); if (condBool) {printf("%s\n", sdsnew("ok"));
+struct ctx0 ctx;
+ctx.a = arrayInit0();
+kv_push(int, ctx.a, 2);
+kv_push(int, ctx.a, 8);
+condBool = (kv_pop(ctx.a) == 8); if (condBool) {printf("%s\n", sdsnew("ok"));
 };
 if (!condBool) {printf("%s\n", sdsnew("fail"));
 };
