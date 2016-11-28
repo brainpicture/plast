@@ -41,7 +41,7 @@ void func_undefined_main() {
 struct ctx3 ctx;
 func_variable_karma(&ctx.a);
 ctx.drones = arrayInit0();
-kv_push(int, ctx.drones, ctx.a);
+kv_push(ctx1, ctx.drones, ctx.a);
 ctx1 def0 = kv_pop(ctx.drones);
 printf("%s\n", func_karma_getName(&def0));
 

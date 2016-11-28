@@ -1,9 +1,9 @@
 "std.plast"
 
-integer plus3
+int plus3
   return (this + 1) plus2
 
-integer plus2
+int plus2
   this > 10
     return this
   else

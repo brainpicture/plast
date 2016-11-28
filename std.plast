@@ -2,8 +2,8 @@
 variable = string
   `$this = $arg` string string
 
-variable = integer
-  `$this = $arg` integer integer
+variable = int
+  `$this = $arg` int int
 
 variable = float
   `$this = $arg` float float
@@ -22,7 +22,7 @@ undefined print
 
 // string
 string print
-  `printf("%s\n", $this)` integer
+  `printf("%s\n", $this)` int
 
 string = string
   `$this = $arg` string
@@ -30,13 +30,13 @@ string = string
 string += string
   `$this = sdscatsds($this, $arg)` string
 
-string += integer
+string += int
   `$this = sdscatsds($this, sdsfromlonglong((long long)$arg))` string
 
 string + string
   `sdscatsds($this, $arg)` string
 
-string + integer
+string + int
   `sdscatsds($this, sdsfromlonglong((long long)$arg))` string
 
 string + float
@@ -65,122 +65,122 @@ string each variable
   `for (int i = 0; i < sdslen($this); i++){$arg = sdsnewlen(&$this[i], 1); $block}` undefined string
 
 string getLeftShift
-  `_strLeftShift($this, ' ')` integer
+  `_strLeftShift($this, ' ')` int
 
-// integer
-integer print
-  `printf("%d\n", $this)` integer
+// int
+int print
+  `printf("%d\n", $this)` int
 
-integer = integer
-  `$this = $arg` integer
+int = int
+  `$this = $arg` int
 
-integer += integer
-  `$this += $arg` integer
+int += int
+  `$this += $arg` int
 
-integer -= integer
-  `$this -= $arg` integer
+int -= int
+  `$this -= $arg` int
 
-integer *= integer
-  `$this *= $arg` integer
+int *= int
+  `$this *= $arg` int
 
-integer > integer
+int > int
   `($this > $arg)` bool
   block
     `condBool = ($this > $arg); if (condBool) {$block}` bool
 
-integer < integer
+int < int
   `($this < $arg)` bool
   block
     `condBool = ($this < $arg); if (condBool) {$block}` bool
 
-integer == integer
+int == int
   `($this == $arg)` bool
   block
     `condBool = ($this == $arg); if (condBool) {$block}` bool
 
-integer != integer
+int != int
   `($this != $arg)` bool
   block
     `condBool = ($this != $arg); if (condBool) {$block}` bool
 
-integer >: integer
+int >: int
   `while ($this > $arg) {$block}` bool
 
-integer <: integer
+int <: int
   `while ($this < $arg) {$block}` bool
 
-integer > float
+int > float
   `if ((float) $this > $arg) {$block}` bool
 
-integer < float
+int < float
   `if ((float) $this > $arg) {$block}` bool
 
-integer >: float
+int >: float
   `while ((float) $this > $arg) {$block}` bool
 
-integer <: float
+int <: float
   `while ((float) $this < $arg) {$block}` bool
 
-integer + string
+int + string
   `sdscatsds(sdsfromlonglong((long long)$this), $arg)` string
 
-integer + integer
-  `($this + $arg)` integer
+int + int
+  `($this + $arg)` int
 
-integer ++
-  `$this += 1` integer
+int ++
+  `$this += 1` int
 
-integer --
-  `$this -= 1` integer
+int --
+  `$this -= 1` int
 
-integer + float
+int + float
   `((float) $this + $arg)` float
 
-integer - integer
-  `($this - $arg)` integer
+int - int
+  `($this - $arg)` int
 
-integer - float
+int - float
   `((float) $this - $arg)` float
 
-integer * integer
-  `($this * $arg)` integer
+int * int
+  `($this * $arg)` int
 
-integer / integer
+int / int
   `((float) $this / (float) $arg)` float
 
-integer / float
+int / float
   `((float) $this / $arg)` float
 
-integer ^ integer
-  `($this ^ $arg)` integer
+int ^ int
+  `($this ^ $arg)` int
 
-integer & integer
-  `($this & $arg)` integer
+int & int
+  `($this & $arg)` int
 
-integer | integer
-  `($this | $arg)` integer
+int | int
+  `($this | $arg)` int
 
-integer >> integer
-  `($this >> $arg)` integer
+int >> int
+  `($this >> $arg)` int
 
-integer << integer
-  `($this << $arg)` integer
+int << int
+  `($this << $arg)` int
 
-integer pow integer
-  `(int)pow($this, $arg)` integer
+int pow int
+  `(int)pow($this, $arg)` int
 
-integer pow float
+int pow float
   `(float)pow($this, $arg)` float
 
-integer getType
-  `"integer"` string
+int getType
+  `"int"` string
 
-integer % integer
-  `($this % $arg)` integer
+int % int
+  `($this % $arg)` int
 
 // float
 float print
-  `printf("%g\n", $this)` integer
+  `printf("%g\n", $this)` int
 
 float = float
   `$this = $arg` float
@@ -197,25 +197,25 @@ float *= float
 float /= float
   `$this /= $arg` float
 
-float /= integer
+float /= int
   `$this /= (float) $arg` float
 
 float + float
   `($this + $arg)` float
 
-float + integer
+float + int
   `($this + (float) $arg)` float
 
 float - float
   `($this - $arg)` float
 
-float - integer
+float - int
   `($this - (float) $arg)` float
 
 float + string
   `sdscatsds(_strFromFloat($this), $arg)` string
 
-float * integer
+float * int
   `($this * (float) $arg)` float
 
 float * float
@@ -224,10 +224,10 @@ float * float
 float / float
   `($this / (float)$arg)` float
 
-float / integer
+float / int
   `($this / $arg)` float
 
-float pow integer
+float pow int
   `(float)pow($this, $arg)` float
 
 float pow float
@@ -256,10 +256,10 @@ bool ? tuple
   `$this, $arg` tuple
 
 tuple print
-  `$structPrint(&$this)` integer
+  `$structPrint(&$this)` int
 
 struct print
-  `$structPrint(&$this)` integer
+  `$structPrint(&$this)` int
 
 tuple = tuple
   `$structEq($thisLinked, &*$arg)` tuple
@@ -346,7 +346,7 @@ struct getType
 * : *
   `.$thisName = $arg` struct
 
-// array_integer
+// array_int
 
 variable = array
   `$this = $arg` array:$argSubType array
