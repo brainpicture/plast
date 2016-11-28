@@ -9,7 +9,7 @@
 bool condBool = true;
 typedef void (*block)(void* ctx);
 typedef kvec_t(sds) array_string;
-typedef kvec_t(int) array_integer;
+typedef kvec_t(int) array_int;
 
 sds _strFromFloat(float a) {
   return sdscatprintf(sdsempty(), "%g", a);

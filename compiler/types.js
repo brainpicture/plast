@@ -8,15 +8,15 @@ exports.getNativeType = function(type, typeInfo) {
   switch(type) {
     case 'string':
       return 'sds'
-    case 'integer':
+    case 'int':
       return 'int'
     case 'float':
       return 'float'
     case 'bool':
       return 'bool'
-    case 'array_integer':
-      //system.addGeneric('array_integer')
-      return 'array_integer'
+    case 'array_int':
+      //system.addGeneric('array_int')
+      return 'array_int'
     case 'array_string':
       //system.addGeneric('array_string') //used in env.c
       return 'array_string'
@@ -74,7 +74,7 @@ exports.getType = function(a) {
   }
   var num = a.match(/^([0-9]+)$/)
   if (num) {
-    return ['integer', lex.CONST, num[1]]
+    return ['int', lex.CONST, num[1]]
   }
   var floatNum = a.match(/^([0-9][0-9\.]+)$/)
   if (floatNum) {

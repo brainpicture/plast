@@ -28,8 +28,8 @@ string getPlastTokens
 //  this.block = [] line
 
 plast
-  this.file = ""
-  this.lineNum = 0
+  file: ""
+  lineNum: 0
 
 plast err string
   "Line" + this.lineNum + ": " + arg print

@@ -1,6 +1,6 @@
 "std.plast"
 
-integer fib
+int fib
   this == 1 || this == 2
     return 1
   else

@@ -153,6 +153,15 @@ function getTypeHash(struct) {
   return els.join(',')
 }
 
+function getArrayDef(type, typeInfo) {
+  var subType = typeInfo[0]
+  if (subType == 'int' || subType == 'string') {
+    return ''
+  }
+  var nativeType = types.getNativeType(subType)
+  return 'typedef kvec_t('+nativeType+') array_'+subType+";\n";
+}
+
 exports.getStruct = function(struct) {
   struct = exports.convertTypeInfo(struct) // tuple to link convert
   var hash = getTypeHash(struct)
@@ -163,6 +172,9 @@ exports.getStruct = function(struct) {
   var out = 'typedef struct '+ctxName+' {\n';
   for(var name in struct) {
     var [type, typeInfo, scope] = struct[name]
+    if (type == 'array') {
+      StructCode += getArrayDef(type, typeInfo)
+    }
     if (scope) {
       continue
     }
@@ -304,7 +316,7 @@ funcs.structPrint = function(funcName, typeInfo) {
     var structType = exports.getStruct(typeInfo)
     var printTypes = {
       'string': '%s',
-      'integer': '%d',
+      'int': '%d',
       'float': '%g',
       'bool': '%s',
     }
@@ -328,7 +340,7 @@ funcs.structPrint = function(funcName, typeInfo) {
     printOpts = printOpts.join(', ')
 return [`int ${funcName}(${structType} *arg) {
 return printf("${printOpts}\\n", ${params});
-}`, 'integer']
+}`, 'int']
 }
 
 funcs.structEq = function(funcName, typeInfoA, typeInfoB, op, err) {
@@ -415,16 +427,16 @@ funcs.structNotEqCheck = function(funcName, typeA, typeB, op, err) {
   return structCheck('==', false, funcName, typeA, typeB, err)
 }
 funcs.structMoreCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('<=', ['integer', 'string'], funcName, typeA, typeB, err)
+  return structCheck('<=', ['int', 'string'], funcName, typeA, typeB, err)
 }
 funcs.structMoreEqCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('<', ['integer', 'string'], funcName, typeA, typeB, err)
+  return structCheck('<', ['int', 'string'], funcName, typeA, typeB, err)
 }
 funcs.structLessCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('>=', ['integer', 'string'], funcName, typeA, typeB, err)
+  return structCheck('>=', ['int', 'string'], funcName, typeA, typeB, err)
 }
 funcs.structLessEqCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('>', ['integer', 'string'], funcName, typeA, typeB, err)
+  return structCheck('>', ['int', 'string'], funcName, typeA, typeB, err)
 }
 
 funcs.arrayInit = function(funcName, thisType, argType, op, err) {
@@ -433,7 +445,7 @@ return [`${type} ${funcName}() {
  ${type} ret;
  kv_init(ret);
  return ret;
-}`, 'array', ['integer']]
+}`, 'array', ['int']]
 }
 
 funcs.structToArray = function(funcName, thisType, argType, op, err) {

@@ -1,6 +1,6 @@
 "std.plast"
 
-integer repeat
+int repeat
   this >: 0
     this--
     block

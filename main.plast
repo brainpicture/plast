@@ -10,4 +10,7 @@ main
   a karma
   drones [] karma
   drones push a
-  drones pop getName print
+  drones pop getName == "karma"
+    "ok" print
+  else
+    "fail" print
