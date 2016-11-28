@@ -12,6 +12,7 @@ typedef struct ctx2 {
 } ctx2;
 
 sds func_karma_getName(ctx1 *this);
+typedef kvec_t(ctx1) array_karma;
 typedef struct ctx3 {
   ctx1 a;
   array_karma drones;
@@ -43,7 +44,10 @@ func_variable_karma(&ctx.a);
 ctx.drones = arrayInit0();
 kv_push(ctx1, ctx.drones, ctx.a);
 ctx1 def0 = kv_pop(ctx.drones);
-printf("%s\n", func_karma_getName(&def0));
+condBool = (strcmp(func_karma_getName(&def0), sdsnew("karma")) == 0); if (condBool) {printf("%s\n", sdsnew("ok"));
+};
+if (!condBool) {printf("%s\n", sdsnew("fail"));
+};
 
 }
 

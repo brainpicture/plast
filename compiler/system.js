@@ -153,6 +153,15 @@ function getTypeHash(struct) {
   return els.join(',')
 }
 
+function getArrayDef(type, typeInfo) {
+  var subType = typeInfo[0]
+  if (subType == 'int' || subType == 'string') {
+    return ''
+  }
+  var nativeType = types.getNativeType(subType)
+  return 'typedef kvec_t('+nativeType+') array_'+subType+";\n";
+}
+
 exports.getStruct = function(struct) {
   struct = exports.convertTypeInfo(struct) // tuple to link convert
   var hash = getTypeHash(struct)
@@ -163,6 +172,9 @@ exports.getStruct = function(struct) {
   var out = 'typedef struct '+ctxName+' {\n';
   for(var name in struct) {
     var [type, typeInfo, scope] = struct[name]
+    if (type == 'array') {
+      StructCode += getArrayDef(type, typeInfo)
+    }
     if (scope) {
       continue
     }
