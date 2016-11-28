@@ -1,0 +1,6 @@
+[submodule "lib/sds"]
+	path = lib/sds
+	url = https://github.com/antirez/sds
+[submodule "lib/klib"]
+	path = lib/klib
+	url = https://github.com/attractivechaos/klib
