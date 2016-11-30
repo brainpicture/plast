@@ -193,6 +193,19 @@ exports.getDefines = function() {
   return precode
 }
 
+exports.getArgNames = function(operator) {
+  var repl = {}
+  if (operator.arg) {
+    for(var i in operator.arg) {
+      var row = operator.arg[i]
+      repl[row[0]] = row[1]
+    }
+  } else {
+    repl[lex.ARG] = operator.argType
+  }
+  return repl
+}
+
 exports.getArguments = function(link, operator) {
   var args = []
   var defArgs = {}
@@ -206,7 +219,12 @@ exports.getArguments = function(link, operator) {
     }
   }
   defArgs[lex.THIS] = ['$this', operator.setType || operator.thisType, operator.thisTypeInfo || false]
-  defArgs[lex.ARG] = ['$arg', operator.argType, operator.argTypeInfo || false]
+
+  var argTypeList = exports.getArgNames(operator)
+  for(var k in argTypeList) {
+    defArgs[k] = ['$'+lex.ARG, argTypeList[k], operator.argTypeInfo || false]
+    break; // only one elem supported at the moment
+  }
   for(var name in defArgs) {
     //var val = Variables[name]
     //if (val) {
@@ -245,13 +263,13 @@ exports.precode = function(code) {
 }
 exports.getWeight = function(word) {
   if (word == lex.RETURN) {
-    return -2
+    return -4
   } else if (word.match(/^[\+\-\*\/]?=$/)) {
-    return -1
+    return -3
   } else if (word.match(/^(&&|\|\|)/)) {
-    return 1
+    return -2
   } else if (word.match(/^([=!]=|[<>])/)) {
-    return 2
+    return -1
   } else if (word.match(/^,/)) {
     return 3
   } else if (word.match(/^:/)) {

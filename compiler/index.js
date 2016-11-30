@@ -319,6 +319,39 @@ function parseFile(tokens, lineN) {
   return d+'/'+fileName
 }
 
+function parseDeclaration(tokens, lineN) {
+  if (tokens.length < 3) {
+    tokens.push('undefined')
+  }
+  if (tokens.length < 3) {
+    if (tokens[0] == 'main') {
+      tokens.unshift('undefined')
+    } else {
+      tokens.unshift('variable')
+    }
+  }
+  for(var i in tokens) {
+    i = parseInt(i)
+    if (tokens[i] == ':' && i > 1) {
+      if (i < 1) {
+        err('incorrect operator declaration near ":"', lineN)
+      }
+      tokens.splice(i-1, 3, [[tokens[i-1], tokens[i+1]]])
+    }
+  }
+  for(var i in tokens) {
+    i = parseInt(i)
+    if (tokens[i] == ',' && i > 1) {
+      if (i < 1 || tokens[i-1].constructor != Object || tokens[i+1].constructor != Object) {
+        err('incorrect operator declaration near ","', lineN)
+      }
+      tokens.splice(i-1, 3, tokens[i-1].concat(tokens[i+1]))
+    }
+  }
+  return tokens
+
+}
+
 function parseTriple(tokens, level, lineN) {
   var op = false
   var a = false
@@ -430,6 +463,10 @@ function genFuncName(op, typeA, typeB) {
   name.push(op)
   if (typeB == 'array') {
     name.push('$argArrayType')
+  } else if (Array.isArray(typeB)) {
+    for(var k in typeB) {
+      name.push(typeB[k][1])
+    }
   } else if (typeB && typeB != 'undefined') {
     name.push(typeB)
   }
@@ -456,17 +493,19 @@ function getOperators(structure, fileName) {
         compileFile(file)
         continue
       }
-      if (tokens.length < 3) {
-        tokens.push('undefined')
-      }
-      if (tokens.length < 3) {
-        if (tokens[0] == 'main') {
-          tokens.unshift('undefined')
-        } else {
-          tokens.unshift('variable')
-        }
-      }
+      var newB
+      tokens = parseDeclaration(tokens, lineN)
       var [typeA, op, typeB] = tokens
+      var newB = false
+      if (Array.isArray(typeB)) {
+        if (typeB.length > 1) {
+          newB = 'tuple'
+        } else {
+          newB = typeB[0][1]
+        }
+      } else if (['undefined', 'array', '*', 'struct', 'tuple', 'variable', 'type'].indexOf(typeB) == -1) {
+        err('no argument name passed, instead "'+typeB+'" use "arg:'+typeB+'"', lineN)
+      }
       var options = {
         name: op,
         func: genFuncName(op, typeA, typeB),
@@ -477,6 +516,11 @@ function getOperators(structure, fileName) {
         argType: typeB,
         lines: [],
         state: {}
+      }
+      if (newB) {
+        options.arg = typeB
+        options.argType = newB
+        typeB = newB
       }
       var operator = getOperator(typeA, op, typeB, lineN, true)
       if (operator) {
@@ -886,7 +930,11 @@ function compileOperator(operator, typeInfoA, typeInfoB) {
   system.setType(lex.THIS, operator.thisType, typeInfoA || false, lex.SCOPE_ARG)
   //}
   if (operator.argType && operator.argType != 'undefined') {
-    system.setType(lex.ARG, operator.argType, typeInfoB || false, lex.SCOPE_ARG)
+    var argTypeList = system.getArgNames(operator)
+    for (var k in argTypeList) {
+      system.setType(k, argTypeList[k], typeInfoB || false, lex.SCOPE_ARG)
+      break; // only one elem at the moment
+    }
   }
 
   var prevOperator = CurOperator
