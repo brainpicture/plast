@@ -1,10 +1,8 @@
 "std.plast"
 
-int newAdd add:int
-  return this+add
 
 main
-  2 newAdd 3 == 5
-    "ok" print
-  else
-    "fail" print
+  a = 10
+  a >: 1
+    a print
+    a -= 1
