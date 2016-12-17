@@ -31,12 +31,12 @@ plast
   file: ""
   lineNum: 0
 
-plast err string
-  "Line" + this.lineNum + ": " + arg print
+plast err errText:string
+  "Line" + this.lineNum + ": " + errText print
   return false
 
-plast compile string
-  this.file = arg
+plast compile code:string
+  this.file = code
   code = this.file readFileSync
   code tok "\n" each line
     this.lineNum += 1

@@ -1,8 +1,11 @@
 "std.plast"
 
+person
+  this.name = "alan"
+  this.age = 20
+  //name:"alan"
+  //age:20
 
 main
-  a = 10
-  a >: 1
-    a print
-    a -= 1
+  n person
+  n.name print

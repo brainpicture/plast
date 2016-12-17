@@ -200,6 +200,12 @@ float /= arg:float
 float /= arg:int
   `$this /= (float) $arg` float
 
+float == arg:int
+  `($this == (float) $arg)` bool
+  block
+    `condBool = ($this == (float) $arg); if (condBool) {$block}` bool
+
+
 float + arg:float
   `($this + $arg)` float
 
