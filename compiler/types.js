@@ -49,7 +49,7 @@ exports.getNativeType = function(type, typeInfo) {
 }
 
 exports.toNative = function(type, typeInfo, varName, pointer) {
-  varName = varName
+  varName = 'a_'+varName
   if (pointer) {
     varName = '*'+varName
   }

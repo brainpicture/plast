@@ -1,11 +1,8 @@
 "std.plast"
 
-person
-  this.name = "alan"
-  this.age = 20
-  //name:"alan"
-  //age:20
-
 main
-  n person
-  n.name print
+  numbers = a:10, b:12, c:30
+  numbers.c - (numbers.a + numbers.b) == 8
+    "ok" print
+  else
+    "fail" print

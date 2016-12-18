@@ -6,7 +6,46 @@
 #include "klib/kvec.h"
 #include "sds/sds.c"
 
-bool condBool = true;
+bool condBool1 = true; // dirty hack
+bool condBool2 = true;
+bool condBool3 = true;
+bool condBool4 = true;
+bool condBool5 = true;
+bool condBool6 = true;
+bool condBool7 = true;
+bool condBool8 = true;
+bool condBool9 = true;
+bool condBool10 = true;
+bool condBool11 = true;
+bool condBool12 = true;
+bool condBool13 = true;
+bool condBool14 = true;
+bool condBool15 = true;
+bool condBool16 = true;
+bool condBool17 = true;
+bool condBool18 = true;
+bool condBool19 = true;
+bool condBool20 = true;
+bool condBool21 = true;
+bool condBool22 = true;
+bool condBool23 = true;
+bool condBool24 = true;
+bool condBool25 = true;
+bool condBool26 = true;
+bool condBool27 = true;
+bool condBool28 = true;
+bool condBool29 = true;
+bool condBool30 = true;
+bool condBool31 = true;
+bool condBool32 = true;
+bool condBool33 = true;
+bool condBool34 = true;
+bool condBool35 = true;
+bool condBool36 = true;
+bool condBool37 = true;
+bool condBool38 = true;
+bool condBool39 = true;
+bool condBool40 = true;
 typedef void (*block)(void* ctx);
 typedef kvec_t(sds) array_string;
 typedef kvec_t(int) array_int;

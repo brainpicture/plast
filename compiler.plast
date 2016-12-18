@@ -1,17 +1,23 @@
 "std.plast"
 
 string getPlastTokens
-  tokens = [] string
-  l = ""
-  this each c
-    c == " "
-      l != ""
-        tokens push l
-        l = ""
+  tokens [] string
+  word = ""
+  this each char
+    char == " "
+      word != ""
+        word != " "
+          tokens push word
+        word = ""
     else
-      l += c
-  l != ""
-    tokens push l
+      char == "," || char  == ":" || char  == "(" || char  == ")" || char  == "."
+        tokens push word
+        word = ""
+        tokens push char
+      else
+        word += char
+  word != ""
+    tokens push word
   return tokens
 
 
@@ -28,8 +34,8 @@ string getPlastTokens
 //  this.block = [] line
 
 plast
-  file: ""
-  lineNum: 0
+  this.file = ""
+  this.lineNum = 0
 
 plast err errText:string
   "Line" + this.lineNum + ": " + errText print

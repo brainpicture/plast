@@ -1,0 +1,12 @@
+"std.plast"
+
+string retArray
+  tokens [] string
+  tokens push "token"
+  return tokens
+
+main
+  "hello" retArray pop == "token"
+    "ok" print
+  else
+    "fail" print

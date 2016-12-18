@@ -621,11 +621,16 @@ function compileTriple(triple, inner, level, ln) {
     var operator = getOperator(typeA, op, typeB, ln)
   }
 
+
+  typeInfoA = getTypeInfo(a, typeA, typeRawInfoA)
+  typeInfoB = getTypeInfo(b, typeB, typeRawInfoB)
+
   if (typeA == 'undefined' && op == lex.RETURN) { // set type on return operator
     if (CurOperator.type != 'undefined' && CurOperator.type != typeB) {
       err('Couldn\'t set return type as '+typeB+', it\'s already deffined as '+CurOperator.type+' at line '+CurOperator.returnLn, ln)
     }
     CurOperator.type = typeB
+    CurOperator.typeInfo = typeInfoB
     if (!CurOperator.returnLn) {
       CurOperator.returnLn = ln
     }
@@ -637,9 +642,6 @@ function compileTriple(triple, inner, level, ln) {
   if (operator.argIsType && operator.typeInfo[0] == '$type'){
     operator.typeInfo[0] = b
   }
-
-  typeInfoA = getTypeInfo(a, typeA, typeRawInfoA)
-  typeInfoB = getTypeInfo(b, typeB, typeRawInfoB)
 
   var opState = compileOperator(operator, typeInfoA, typeInfoB)
   if (operator.type == 'undefined') {
@@ -757,9 +759,11 @@ function compileTriple(triple, inner, level, ln) {
         return types.getNativeType(typeA, typeInfoA)
         //return typeA
       } else if (el == 'thisName') {
-        return a
+        return 'a_'+a
       } else if (el == 'argName') {
-        return b
+        return 'a_'+b
+      } else if (el == 'level') {
+        return level
       } else if (el == 'thisLinked') {
         return '&'+codeA.replace(/, ctx\./g, ', &ctx.') // too dirty
       } else if (el == 'this') {
@@ -847,7 +851,9 @@ function compileTriple(triple, inner, level, ln) {
     }
   }
   if (type === '*' && op == '.') {
-    var [type, typeInfo] = system.getStructType(a, b)
+    var [type, typeInfo] = system.getStructType(a, b, () => {
+      err('custom type properties could not be accessed outside type operator', ln)
+    })
   }
 
   if (type == 'array' && (!typeInfo || typeInfo.length == 0)) {
@@ -955,7 +961,10 @@ function compileOperator(operator, typeInfoA, typeInfoB) {
   }
   var args = system.getArguments(false, operator)
 
-  system.func(funcName, block, args, operator.type)+"\n"
+  if (operator.type == 'variable') {
+    err('operator return is variable (return object type undfined)', CurOperator.lineN)
+  }
+  system.func(funcName, block, args, operator.type, operator.typeInfo)+"\n"
 
   CurOperator = system.contextPop()
 }

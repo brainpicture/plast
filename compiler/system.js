@@ -41,7 +41,7 @@ function getStructScope(key, vars) {
   return [key, vars]
 }
 
-exports.getStructType = function(k, v) {
+exports.getStructType = function(k, v, accessErr) {
   var [key, vars, rootKey] = getScope(k, Variables)
   var typeVar = vars[key]
   if (typeVar) {
@@ -50,6 +50,9 @@ exports.getStructType = function(k, v) {
       if (newTypeVar) {
         typeVar = newTypeVar
       }
+    }
+    if (typeVar[1] === undefined) {
+      return accessErr()
     }
     var res = typeVar[1][v]
   }
@@ -121,18 +124,18 @@ exports.setType = function(name, type, typeInfo, scope) {
 
 exports.wrapVariable = function(name, simple) {
   if (simple) {
-    return name
+    return 'a_'+name
   }
   var c = 'ctx.'
   var info = Variables[name]
   if (!info) {
-    return c+name
+    return c+'a_'+name
   }
   var [type, typeInfo, scope] = info
   if (scope == lex.SCOPE_ARG) {
-    return '(*'+name+')'
+    return '(*'+'a_'+name+')'
   }
-  return c+name
+  return c+'a_'+name
 }
 
 exports.newVariable = function() {
@@ -218,6 +221,7 @@ exports.getArguments = function(link, operator) {
       args.push('void* blockCtx')
     }
   }
+
   defArgs[lex.THIS] = ['$this', operator.setType || operator.thisType, operator.thisTypeInfo || false]
 
   var argTypeList = exports.getArgNames(operator)
@@ -309,8 +313,8 @@ ${mainFunc}();
 }`
 }
 
-exports.func = function(funcName, code, args, retType) {
-  var nativeType = types.getNativeType(retType)
+exports.func = function(funcName, code, args, retType, retTypeInfo) {
+  var nativeType = types.getNativeType(retType, retTypeInfo)
   var type = (nativeType || 'void')
 StructCode += `${type} ${funcName}(${args});\n`
 FuncCode += `${type} ${funcName}(${args}) {
@@ -382,7 +386,7 @@ funcs.structEq = function(funcName, typeInfoA, typeInfoB, op, err) {
     var type = types.getNativeType(setType, setTypeInfo)
     var aName = '*a'+elN
     thisArgs.push(type+' '+aName)
-    code.push(aName+' = arg.'+argName+';')
+    code.push(aName+' = arg.a_'+argName+';')
     elN += 1
   }
   code = code.join("\n")
@@ -405,13 +409,13 @@ function structCheck(check, onlyType, funcName, typeInfoA, typeInfoB, err) {
   var elN = 0
   for(var i in typeInfoA) {
     var [typeA] = typeInfoA[i]
-    var thisName = 'this->'+i
+    var thisName = 'this->a_'+i
 
     if (!argTypes.length) {
       err('too few arguments')
     }
     var [b, [typeB]] = argTypes.shift()
-    var argName = 'arg->'+b
+    var argName = 'arg->a_'+b
 
     if (typeA != typeB) {
       err('wrong type converion from '+typeA+' to '+typeB+', element #'+(elN+1))
