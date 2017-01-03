@@ -256,6 +256,11 @@ bool || arg:bool
 bool ? tuple
   `$ternarOp(&$this, *$arg)`
 
+bool == arg:bool
+  `($this == $arg)` bool
+  block
+    `condBool$level = ($this == $arg); if (condBool$level) {$block}` bool
+
 
 // tuples
 * , *
@@ -324,6 +329,9 @@ array print
     else
       out += ", " + item
   "["+out+"]" print
+
+array len
+  `(int) kv_size($this)` int
 
 undefined array
   `$arrayInit()` array

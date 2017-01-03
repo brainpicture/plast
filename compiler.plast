@@ -1,16 +1,32 @@
 "std.plast"
 
-string getPlastTokens
+//variable plastOperator header:string
+
+variable plastLine line:string
+  this.line = line
+  this.shift = line getLeftShift
+  this.tokens = this getTokens
+
+plastLine getTokens
   tokens [] string
   word = ""
-  this each char
+  mode = 0
+  backchar = ""
+  this.line each char
+    char == '"' || char == "'"
+      mode == 1
+        char == backchar
+          mode = 0
+      else
+        mode = 1
+        backchar = char
     char == " "
       word != ""
         word != " "
           tokens push word
         word = ""
     else
-      char == "," || char  == ":" || char  == "(" || char  == ")" || char  == "."
+      (char == "," || char  == ":" || char  == "(" || char  == ")" || char  == ".") && mode == 0
         tokens push word
         word = ""
         tokens push char
@@ -20,22 +36,20 @@ string getPlastTokens
     tokens push word
   return tokens
 
+plastLine isHeader
+  this.shift == 0
+    block
 
+plastLine isEmpty
+  return this.tokens len == 0
 
-//plastOperator
-//  thisName, opName, argName = arg
-//  this.this = thisName
-//  this.name = opName
-//  this.arg = argName
-//  this.lines = [] line
+plastLine print
+  "|"+this.line print
 
-//line
-//  this.line = ""
-//  this.block = [] line
-
-plast
+variable plast
   this.file = ""
   this.lineNum = 0
+  //this.operators [] plastOperator
 
 plast err errText:string
   "Line" + this.lineNum + ": " + errText print
@@ -44,18 +58,19 @@ plast err errText:string
 plast compile code:string
   this.file = code
   code = this.file readFileSync
-  code tok "\n" each line
+  code tok "\n" each lineStr
     this.lineNum += 1
-    shift = line getLeftShift
-    tokens = line getPlastTokens
-    tokens print
-    shift % 2 != 0
-      return this err "incorrect line shift"
-    //shift == 0
-    //  "new "+line print
-    //else
-    //  "print" print
+    line plastLine lineStr
+    line isEmpty == false
+      line isHeader
+        this addHeader line
+      //else
+      //  this addLine line
+
   return true
+
+plast addHeader line:plastLine
+  line print
 
 main
   plast plast

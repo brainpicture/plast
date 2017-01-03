@@ -1,0 +1,14 @@
+"std.plast"
+
+plastLine
+  this.line = "test"
+  this getTokens == true
+    "ok" print
+  else
+    "fail" print
+
+plastLine getTokens
+  return true
+
+main
+  pl plastLine

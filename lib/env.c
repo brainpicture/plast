@@ -46,7 +46,7 @@ bool condBool37 = true;
 bool condBool38 = true;
 bool condBool39 = true;
 bool condBool40 = true;
-typedef void (*block)(void* ctx);
+typedef void (*block)(void* this, void* ctx);
 typedef kvec_t(sds) array_string;
 typedef kvec_t(int) array_int;
 

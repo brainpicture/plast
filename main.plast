@@ -1,8 +1,13 @@
 "std.plast"
 
+int repeat
+  this >: 0
+    this--
+    block
+
 main
-  numbers = a:10, b:12, c:30
-  numbers.c - (numbers.a + numbers.b) == 8
+  b = 0
+  3 repeat
+    b += 1
+  b == 3
     "ok" print
-  else
-    "fail" print

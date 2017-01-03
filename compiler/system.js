@@ -165,13 +165,17 @@ function getArrayDef(type, typeInfo) {
   return 'typedef kvec_t('+nativeType+') array_'+subType+";\n";
 }
 
-exports.getStruct = function(struct) {
+exports.getStruct = function(struct, ctxId) {
   struct = exports.convertTypeInfo(struct) // tuple to link convert
   var hash = getTypeHash(struct)
   if (Structs[hash]) {
     return Structs[hash]
   }
-  var ctxName = 'ctx'+CtxNum++
+  if (ctxId !== undefined) {
+    var ctxName = 'ctx'+ctxId
+  } else {
+    var ctxName = 'ctx'+CtxNum++
+  }
   var out = 'typedef struct '+ctxName+' {\n';
   for(var name in struct) {
     var [type, typeInfo, scope] = struct[name]
@@ -189,8 +193,8 @@ exports.getStruct = function(struct) {
   return ctxName
 }
 
-exports.getDefines = function() {
-  var ctxName = exports.getStruct(Variables)
+exports.getDefines = function(ctxId) {
+  var ctxName = exports.getStruct(Variables, ctxId)
   var precode = 'struct '+ctxName+ ' ctx;'
   precode += Precodes.join("\n")
   return precode
@@ -215,9 +219,11 @@ exports.getArguments = function(link, operator) {
   if (operator && operator.wrapBlock) {
     if (link) {
       args.push('(void*) &$block')
+      args.push('a_this')
       args.push('&ctx') // TODO 1
     } else {
       args.push('block blockCb')
+      args.push('void* blockThis')
       args.push('void* blockCtx')
     }
   }
@@ -252,6 +258,7 @@ exports.contextPush = function(operator) {
   Variables = {}
   Precodes = []
   VariableIndex = 0
+  operator.ctxId = CtxNum++
 }
 
 exports.contextPop = function() {
@@ -301,7 +308,7 @@ exports.addGeneric = function(type) {
   }
 }
 
-exports.main = function(precode, code, mainFunc) {
+exports.main = function(precode, code, mainFunc, ctxId) {
   return `#include "lib/env.c"
 
 ${StructCode}
@@ -309,7 +316,8 @@ ${FuncCode}
 ${code}
 int main() {
 ${precode}
-${mainFunc}();
+struct ctx${ctxId} mainCtx;
+${mainFunc}(&mainCtx);
 }`
 }
 
@@ -322,11 +330,18 @@ ${code}
 }\n\n`
 }
 
-exports.wrapBlock = function(code) {
+exports.wrapBlock = function(code, operator) {
   var blockName = 'block'+BlockNum++
   code = code.replace(/ctx\./g, 'ctx->')
 
-FuncCode += `void ${blockName}(struct ctx1* ctx) {
+  //var typeCode = types.toNative((operator.setType || operator.thisType), operator.thisTypeInfo || false, lex.THIS, true)
+  var thisVar = Variables[lex.THIS]
+  if (thisVar) {
+    var typeCode = types.toNative(thisVar[0], thisVar[1], lex.THIS, true)
+  } else {
+    var typeCode = types.toNative((operator.setType || operator.thisType), operator.thisTypeInfo || false, lex.THIS, true)
+  }
+FuncCode += `void ${blockName}(${typeCode}, struct ctx${operator.ctxId}* ctx) {
 ${code}
 }\n\n`
   return blockName
@@ -535,4 +550,12 @@ exports.getFunc = function(name, typeA, typeB, op, onErr) {
   FuncCode += code+'\n\n'
   Functions[typeName] = [funcName, retType, retTypeInfo]
   return Functions[typeName]
+}
+
+exports.wrapStr = function(str) {
+  str = str.replace(/(")/g, (match, word) => {
+    return "\\"+word
+  })
+  return str
+
 }

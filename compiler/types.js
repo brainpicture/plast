@@ -66,11 +66,11 @@ exports.getType = function(a) {
   }
   var str = a.match(/^"(.*)"$/)
   if (str) {
-    return ['string', lex.CONST, 'sdsnew("'+str[1]+'")']
+    return ['string', lex.CONST, 'sdsnew("'+system.wrapStr(str[1])+'")']
   }
   var str = a.match(/^'(.*)'$/)
   if (str) {
-    return ['string', lex.CONST, 'sdsnew("'+str[1]+'")']
+    return ['string', lex.CONST, 'sdsnew("'+system.wrapStr(str[1])+'")']
   }
   var num = a.match(/^([0-9]+)$/)
   if (num) {

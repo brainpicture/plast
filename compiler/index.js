@@ -10,6 +10,7 @@ var OperatorShort = {}
 var OperatorFull = {}
 var Operators = {'undefined': {}, '*': {}}
 var Files = []
+var CompileQueue = []
 var CurOperator = false
 
 function err(text, line) {
@@ -171,6 +172,9 @@ function getOperator(typeA, op, typeB, lineN, strict) {
 }
 
 function getOperationType(word) {
+  if (word == lex.THIS) {
+    return (CurOperator.thisType == 'struct') ? CurOperator.name : CurOperator.thisType
+  }
   if (Array.isArray(word)) {
     return word[0]
   } else {
@@ -325,7 +329,7 @@ function parseDeclaration(tokens, lineN) {
   }
   if (tokens.length < 3) {
     if (tokens[0] == 'main') {
-      tokens.unshift('undefined')
+      tokens.unshift('variable') // sould be variable
     } else {
       tokens.unshift('variable')
     }
@@ -584,18 +588,20 @@ function compileTriple(triple, inner, level, ln) {
   var typeInfoB = false;
   var [a, op, b, codeBlock] = triple
   if (!inner && a == 'undefined' && op == 'block') {
-    var code = 'blockCb(blockCtx);'
+    var code = 'blockCb(blockThis, blockCtx);'
     return ['undefined', code, '', []]
   }
   var precode = ''
   if (Array.isArray(a)) {
     var [typeA, codeA, precodeA, typeRawInfoA] = a
-
     precode += precodeA
     var lexA = lex.CONST
   } else {
     var [,lexA] = types.getType(a)
     var [typeA, codeA] = prepareVar(a) // here prep this
+    if (a == lex.THIS && op == lex.DOT) {
+      typeA = 'struct' // if dot used inside type operator
+    }
   }
 
   if (b) {
@@ -615,7 +621,9 @@ function compileTriple(triple, inner, level, ln) {
     var lexB = lex.CONST
   }
 
-  if (op == '=' && typeA == 'variable' && lexB == lex.VAR) {
+  if (a == lex.THIS && typeA == 'struct' && (op != '.' && op != '=')) {
+    var operator = getOperator(CurOperator.name, op, typeB, ln)
+  } else if (op == '=' && typeA == 'variable' && lexB == lex.VAR) {
     var operator = getOperator(typeA, op, '*', ln)
   } else {
     var operator = getOperator(typeA, op, typeB, ln)
@@ -773,7 +781,7 @@ function compileTriple(triple, inner, level, ln) {
       } else if (el == 'block') {
         codeBlock = compileMain(codeBlock, level + 1)
         if (link) {
-          return system.wrapBlock(codeBlock) || ''
+          return system.wrapBlock(codeBlock, CurOperator) || ''
         } else {
           return codeBlock || ''
         }
@@ -949,7 +957,7 @@ function compileOperator(operator, typeInfoA, typeInfoB) {
   var blocks = buildBlocks(lines, 1)
   var output = compileMain(blocks, 1)
 
-  var block = system.getDefines() + "\n" + output
+  var block = system.getDefines(CurOperator.ctxId) + "\n" + output
 
   operator.state[suffix] = 2
 
@@ -959,12 +967,14 @@ function compileOperator(operator, typeInfoA, typeInfoB) {
   if (operator.setType && operator.thisType) {
     system.setObjectType(operator.setType)
   }
-  var args = system.getArguments(false, operator)
 
   if (operator.type == 'variable') {
     err('operator return is variable (return object type undfined)', CurOperator.lineN)
   }
-  system.func(funcName, block, args, operator.type, operator.typeInfo)+"\n"
+  CompileQueue.push(() => {
+    var args = system.getArguments(false, operator)
+    system.func(funcName, block, args, operator.type, operator.typeInfo)+"\n"
+  })
 
   CurOperator = system.contextPop()
 }
@@ -977,11 +987,16 @@ function compileFile(file) {
 }
 
 
-compileFile(process.argv[2])
-var mainOperator = getOperator('undefined', 'main', 'undefined', 0)
+var sourceFile = process.argv[2]
+compileFile(sourceFile)
+var mainOperator = getOperator('variable', 'main', 'undefined', 0)
 if (!mainOperator) {
   err('No main operator', 0)
 }
+mainOperator.lines.unshift([1, 'this.file = "'+sourceFile+'"', -1])
 compileOperator(mainOperator)
-var output = system.main('', '', mainOperator.func)
+for(var i in CompileQueue) {
+  CompileQueue[i]()
+}
+var output = system.main('', '', mainOperator.func, mainOperator.ctxId)
 fs.writeFileSync('./main.c', output)
