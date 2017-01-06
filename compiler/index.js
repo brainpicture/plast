@@ -998,5 +998,6 @@ compileOperator(mainOperator)
 for(var i in CompileQueue) {
   CompileQueue[i]()
 }
-var output = system.main('', '', mainOperator.func, mainOperator.ctxId)
+var mainType = types.getNativeType(mainOperator.setType || mainOperator.thisType, mainOperator.thisTypeInfo)
+var output = system.main('', '', mainOperator.func, mainType)
 fs.writeFileSync('./main.c', output)

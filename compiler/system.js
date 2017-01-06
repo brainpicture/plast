@@ -245,6 +245,7 @@ exports.getArguments = function(link, operator) {
       }
     } else {
       var typeCode = types.toNative(type, typeInfo, name, true)
+      //console.log(typeCode);
       if (typeCode) {
         args.push(typeCode)
       }
@@ -308,7 +309,7 @@ exports.addGeneric = function(type) {
   }
 }
 
-exports.main = function(precode, code, mainFunc, ctxId) {
+exports.main = function(precode, code, mainFunc, mainType) {
   return `#include "lib/env.c"
 
 ${StructCode}
@@ -316,7 +317,7 @@ ${FuncCode}
 ${code}
 int main() {
 ${precode}
-struct ctx${ctxId} mainCtx;
+struct ${mainType} mainCtx;
 ${mainFunc}(&mainCtx);
 }`
 }
