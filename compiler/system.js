@@ -14,11 +14,36 @@ var Structs = {}
 var ObjectTypes = {}
 var types = require('./types.js')
 var lex = require('./lex.js')
+var LineN = -1
+var getOperator, compileOperator;
+var err
+
+exports.setLineN = function(ln) {
+  LineN = ln
+}
+exports.getLineN = function() {
+  return LineN
+}
+
+exports.passFuncs = function(getOp, compileOp, err) {
+  getOperator = getOp
+  compileOperator = compileOp
+  err = err
+}
 
 exports.setObjectType = function(obj) {
   ObjectTypes[obj] = Variables[lex.THIS]
 }
 exports.getObjectType = function(obj) {
+  if (types.isNativeType(obj)) {
+    return undefined
+  }
+  if (!ObjectTypes[obj]) {
+    var op = getOperator('variable', obj, undefined, LineN)
+    if (op) {
+      var opState = compileOperator(op, undefined, undefined)
+    }
+  }
   return ObjectTypes[obj]
 }
 
@@ -381,7 +406,7 @@ return printf("${printOpts}\\n", ${params});
 }`, 'int']
 }
 
-funcs.structEq = function(funcName, typeInfoA, typeInfoB, op, err) {
+funcs.structEq = function(funcName, typeInfoA, typeInfoB, op, errF) {
   var argType = exports.getStruct(typeInfoB)
 
   var code = []
@@ -395,7 +420,7 @@ funcs.structEq = function(funcName, typeInfoA, typeInfoB, op, err) {
   for(var a in typeInfoA) {
     var [typeA, typeInfo] = typeInfoA[a]
     if (!argTypes.length) {
-      err('left side contain '+typeInfoA.length+' elements, '+typeInfoB.length+' expected')
+      errF('left side contain '+typeInfoA.length+' elements, '+typeInfoB.length+' expected')
     }
     var [argName, [setType, setTypeInfo]] = argTypes.shift()
     exports.setType(a, setType, setTypeInfo);
@@ -413,7 +438,7 @@ ${code}
 }`, 'struct']
 }
 
-function structCheck(check, onlyType, funcName, typeInfoA, typeInfoB, err) {
+function structCheck(check, onlyType, funcName, typeInfoA, typeInfoB, errF) {
   var thisType = exports.getStruct(typeInfoA)
   var argType = exports.getStruct(typeInfoB)
   var argTypes = []
@@ -428,16 +453,16 @@ function structCheck(check, onlyType, funcName, typeInfoA, typeInfoB, err) {
     var thisName = 'this->a_'+i
 
     if (!argTypes.length) {
-      err('too few arguments')
+      errF('too few arguments')
     }
     var [b, [typeB]] = argTypes.shift()
     var argName = 'arg->a_'+b
 
     if (typeA != typeB) {
-      err('wrong type converion from '+typeA+' to '+typeB+', element #'+(elN+1))
+      errF('wrong type converion from '+typeA+' to '+typeB+', element #'+(elN+1))
     }
     if (onlyType && onlyType.indexOf(typeA) == -1) {
-      err('struct '+check+' struct support only '+onlyType+'; '+typeA+' given')
+      errF('struct '+check+' struct support only '+onlyType+'; '+typeA+' given')
     }
     if (typeA == 'string') {
       var checkCode = 'strcmp('+thisName+', '+argName+') '+check+' 0'
@@ -448,7 +473,7 @@ function structCheck(check, onlyType, funcName, typeInfoA, typeInfoB, err) {
     elN += 1
   }
   if (argTypes.length) {
-    err('too much arguments')
+    errF('too much arguments')
   }
   code = code.join("\n")
 
@@ -458,26 +483,26 @@ return true;
 }`, 'bool']
 }
 
-funcs.structEqCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('!=', false, funcName, typeA, typeB, err)
+funcs.structEqCheck = function(funcName, typeA, typeB, op, errF) {
+  return structCheck('!=', false, funcName, typeA, typeB, errF)
 }
-funcs.structNotEqCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('==', false, funcName, typeA, typeB, err)
+funcs.structNotEqCheck = function(funcName, typeA, typeB, op, errF) {
+  return structCheck('==', false, funcName, typeA, typeB, errF)
 }
-funcs.structMoreCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('<=', ['int', 'string'], funcName, typeA, typeB, err)
+funcs.structMoreCheck = function(funcName, typeA, typeB, op, errF) {
+  return structCheck('<=', ['int', 'string'], funcName, typeA, typeB, errF)
 }
-funcs.structMoreEqCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('<', ['int', 'string'], funcName, typeA, typeB, err)
+funcs.structMoreEqCheck = function(funcName, typeA, typeB, op, errF) {
+  return structCheck('<', ['int', 'string'], funcName, typeA, typeB, errF)
 }
-funcs.structLessCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('>=', ['int', 'string'], funcName, typeA, typeB, err)
+funcs.structLessCheck = function(funcName, typeA, typeB, op, errF) {
+  return structCheck('>=', ['int', 'string'], funcName, typeA, typeB, errF)
 }
-funcs.structLessEqCheck = function(funcName, typeA, typeB, op, err) {
-  return structCheck('>', ['int', 'string'], funcName, typeA, typeB, err)
+funcs.structLessEqCheck = function(funcName, typeA, typeB, op, errF) {
+  return structCheck('>', ['int', 'string'], funcName, typeA, typeB, errF)
 }
 
-funcs.arrayInit = function(funcName, thisType, argType, op, err) {
+funcs.arrayInit = function(funcName, thisType, argType, op, errF) {
   var type = 'array_'+argType
 return [`${type} ${funcName}() {
  ${type} ret;
@@ -486,7 +511,7 @@ return [`${type} ${funcName}() {
 }`, 'array', ['int']]
 }
 
-funcs.structToArray = function(funcName, thisType, argType, op, err) {
+funcs.structToArray = function(funcName, thisType, argType, op, errF) {
     var args = [];
     var allType = false
     var len = thisType.length
@@ -495,7 +520,7 @@ funcs.structToArray = function(funcName, thisType, argType, op, err) {
     for(var i in thisType) {
       var [type] = thisType[i]
       if (allType !== false && type != allType) {
-        err('attempt to init array with different types '+type+' and '+allType+', element #'+(parseInt(i)+1))
+        errF('attempt to init array with different types '+type+' and '+allType+', element #'+(parseInt(i)+1))
       }
       allType = type
       var varName = 'n'+i
@@ -513,13 +538,13 @@ return [`array_${allType} ${funcName}(${args}) {
 }`, 'array', [allType]]
 }
 
-funcs.ternarOp = function(funcName, typeA, typeB, op, err) {
+funcs.ternarOp = function(funcName, typeA, typeB, op, errF) {
   var args = []
   if (typeB.length != 2) {
-    err('right side contain '+typeB.length+' elements, 2 expected')
+    errF('right side contain '+typeB.length+' elements, 2 expected')
   }
   if (typeB[0] != typeB[1]) {
-    err('right side should have same type, '+typeB[0]+' and '+typeB[1]+' passed')
+    errF('right side should have same type, '+typeB[0]+' and '+typeB[1]+' passed')
   }
   var retType = types.getNativeType(typeB[0])
   args.push(types.getNativeType(typeA) + ' *a')

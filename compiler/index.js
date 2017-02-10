@@ -161,7 +161,7 @@ function getOperator(typeA, op, typeB, lineN, strict) {
       operator = Operators['*'][op+' *']
     }
   }
-  if (!operator) {
+  if (!operator && !strict) {
     var subType = system.getObjectType(typeA)
     if (subType) {
       [typeA] = subType
@@ -199,6 +199,9 @@ function setOperator(typeA, op, typeB, data, lineN) {
   }
   if (typeB && typeB != 'undefined') {
     op += ' '+typeB
+    /*if (typeA != 'variable') { // types declaration allowed only with fixed set of arguments
+      op += ' '+typeB
+    }*/
     if (OperatorShort[typeA][op] !== undefined) {
       err('Operator '+typeA+' '+op+' already defined without argument at line '+OperatorShort[typeA][op]+' (could not use argument type '+typeB+')', lineN)
     }
@@ -526,7 +529,9 @@ function getOperators(structure, fileName) {
         options.argType = newB
         typeB = newB
       }
+      //console.log('get op first time', typeA, op);
       var operator = getOperator(typeA, op, typeB, lineN, true)
+      //console.log('op pp ', operator);
       if (operator) {
         var msg ='Operator '+typeA+' '+op+' '+typeB+' already defined'
         if (operator.lineN) {
@@ -584,6 +589,7 @@ function compileLines(lines, file) {
 }
 
 function compileTriple(triple, inner, level, ln) {
+  system.setLineN(ln)
   var typeInfoA = false;
   var typeInfoB = false;
   var [a, op, b, codeBlock] = triple
@@ -621,12 +627,15 @@ function compileTriple(triple, inner, level, ln) {
     var lexB = lex.CONST
   }
 
+
+  var operatorTypeA = typeA
   if (a == lex.THIS && typeA == 'struct' && (op != '.' && op != '=')) {
-    var operator = getOperator(CurOperator.name, op, typeB, ln)
+    var operatorTypeA = CurOperator.name
+    var operator = getOperator(operatorTypeA, op, typeB, ln)
   } else if (op == '=' && typeA == 'variable' && lexB == lex.VAR) {
-    var operator = getOperator(typeA, op, '*', ln)
+    var operator = getOperator(operatorTypeA, op, '*', ln)
   } else {
-    var operator = getOperator(typeA, op, typeB, ln)
+    var operator = getOperator(operatorTypeA, op, typeB, ln)
   }
 
 
@@ -645,7 +654,7 @@ function compileTriple(triple, inner, level, ln) {
   }
 
   if (!operator) {
-    err('Operator not found: '+typeA+' '+op+(typeB && typeB != 'undefined' && typeB != 'variable' ? ' '+typeB : ''), ln)
+    err('Operator not found: '+operatorTypeA+' '+op+(typeB && typeB != 'undefined' && typeB != 'variable' ? ' '+typeB : ''), ln)
   }
   if (operator.argIsType && operator.typeInfo[0] == '$type'){
     operator.typeInfo[0] = b
@@ -986,6 +995,8 @@ function compileFile(file) {
   compileLines(lines, file)
 }
 
+
+system.passFuncs(getOperator, compileOperator, err)
 
 var sourceFile = process.argv[2]
 compileFile(sourceFile)

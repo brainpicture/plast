@@ -1,13 +1,14 @@
 "std.plast"
 
-int repeat
-  this >: 0
-    this--
-    block
+plastLine
+  this.line = "test"
+  this getTokens == true
+    "ok" print
+  else
+    "fail" print
+
+plastLine getTokens
+  return true
 
 main
-  b = 0
-  3 repeat
-    b += 1
-  b == 3
-    "ok" print
+  pl plastLine

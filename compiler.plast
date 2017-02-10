@@ -1,6 +1,8 @@
 "std.plast"
 
-//variable plastOperator header:string
+variable plastOperator header:plastLine
+  this.name = "wow"
+  "OPERATOR CREATION" print
 
 variable plastLine line:string
   this.line = line
@@ -46,7 +48,7 @@ plastLine isEmpty
 plastLine print
   "|"+this.line print
 
-variable plast
+plast
   this.file = ""
   this.lineNum = 0
   //this.operators [] plastOperator
@@ -70,7 +72,9 @@ plast compile code:string
   return true
 
 plast addHeader line:plastLine
-  line print
+  "addHeaders" print
+  //op plastOperator
+  //this.operators push op
 
 main
   plast plast

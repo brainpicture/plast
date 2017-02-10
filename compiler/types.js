@@ -4,6 +4,14 @@ var num = 0;
 var system = require('./system.js')
 var lex = require('./lex.js')
 
+exports.isNativeType = function(type) {
+  var types = ['string', 'int', 'float', 'variable', 'undefined', 'bool', 'struct', 'tuple', 'array', '*']
+  if (types.indexOf(type) != -1) {
+    return true;
+  }
+  return false;
+}
+
 exports.getNativeType = function(type, typeInfo) {
   switch(type) {
     case 'string':
@@ -43,7 +51,7 @@ exports.getNativeType = function(type, typeInfo) {
       }
       break;
   }
-  console.log('could not get native type of', type, typeInfo);
+  console.log('LINE ['+system.getLineN()+'] could not get native type of', type, typeInfo);
   throw new Error()
   return ''
 }
