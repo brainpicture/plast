@@ -51,7 +51,7 @@ plastLine print
 plast
   this.file = ""
   this.lineNum = 0
-  //this.operators [] plastOperator
+  this.operators [] plastOperator
 
 plast err errText:string
   "Line" + this.lineNum + ": " + errText print

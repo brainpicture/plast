@@ -728,6 +728,7 @@ function compileTriple(triple, inner, level, ln) {
           if (!typeInfoA || typeInfoA.length == 0) {
             err('this "'+typeA+'" has no type', ln)
           }
+          console.log('how get', typeA, typeInfoA[0]);
           var retSubType = types.getNativeType(typeInfoA[0])
           if (!retSubType) {
             err('this "'+typeA + '" has no type', ln)
