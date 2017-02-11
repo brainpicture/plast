@@ -201,11 +201,12 @@ exports.getStruct = function(struct, ctxId) {
   } else {
     var ctxName = 'ctx'+CtxNum++
   }
+  var codePrefix = ''
   var out = 'typedef struct '+ctxName+' {\n';
   for(var name in struct) {
     var [type, typeInfo, scope] = struct[name]
     if (type == 'array') {
-      StructCode += getArrayDef(type, typeInfo)
+      codePrefix = getArrayDef(type, typeInfo)
     }
     if (scope) {
       continue
@@ -213,7 +214,7 @@ exports.getStruct = function(struct, ctxId) {
     out += "  "+types.toNative(type, typeInfo, name)+";\n"
   }
   out += '} '+ctxName+';\n\n'
-  StructCode += out
+  StructCode += codePrefix+out
   Structs[hash] = ctxName
   return ctxName
 }
@@ -270,7 +271,6 @@ exports.getArguments = function(link, operator) {
       }
     } else {
       var typeCode = types.toNative(type, typeInfo, name, true)
-      //console.log(typeCode);
       if (typeCode) {
         args.push(typeCode)
       }

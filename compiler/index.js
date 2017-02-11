@@ -198,10 +198,11 @@ function setOperator(typeA, op, typeB, data, lineN) {
     OperatorFull[typeA] = {}
   }
   if (typeB && typeB != 'undefined') {
-    op += ' '+typeB
-    /*if (typeA != 'variable') { // types declaration allowed only with fixed set of arguments
+    // dirty hack, should be fixed with c code style change
+    var is_C = data.file == './std.plast'
+    if (typeA != 'variable' || is_C) { // types declaration allowed only with fixed set of arguments
       op += ' '+typeB
-    }*/
+    }
     if (OperatorShort[typeA][op] !== undefined) {
       err('Operator '+typeA+' '+op+' already defined without argument at line '+OperatorShort[typeA][op]+' (could not use argument type '+typeB+')', lineN)
     }
@@ -728,7 +729,6 @@ function compileTriple(triple, inner, level, ln) {
           if (!typeInfoA || typeInfoA.length == 0) {
             err('this "'+typeA+'" has no type', ln)
           }
-          console.log('how get', typeA, typeInfoA[0]);
           var retSubType = types.getNativeType(typeInfoA[0])
           if (!retSubType) {
             err('this "'+typeA + '" has no type', ln)

@@ -73,7 +73,7 @@ plast compile code:string
 
 plast addHeader line:plastLine
   "addHeaders" print
-  //op plastOperator
+  //op plastOperator line
   //this.operators push op
 
 main

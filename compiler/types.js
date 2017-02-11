@@ -34,7 +34,6 @@ exports.getNativeType = function(type, typeInfo) {
       return system.getStruct(typeInfo)
     case 'array':
       if (!typeInfo || !typeInfo.length) {
-        console.log('array_passing error', type, typeInfo);
         throw new Error()
       }
       var typeStr = typeInfo[0]

@@ -1,0 +1,13 @@
+"std.plast"
+
+variable plastOperator header:plastLine
+  this.name = "wow"
+  "OPERATOR CREATION" print
+
+variable plastLine line:string
+  this.line = line
+  "wow" print
+
+main
+  operators [] plastOperator
+  "ok" print
