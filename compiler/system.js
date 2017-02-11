@@ -11,6 +11,7 @@ var VariableIndex = 0
 var Context = []
 var Generics = {}
 var Structs = {}
+var Arrays = {}
 var ObjectTypes = {}
 var types = require('./types.js')
 var lex = require('./lex.js')
@@ -187,6 +188,10 @@ function getArrayDef(type, typeInfo) {
     return ''
   }
   var nativeType = types.getNativeType(subType)
+  if (Arrays[subType]) {
+    return ''
+  }
+  Arrays[subType] = true
   return 'typedef kvec_t('+nativeType+') array_'+subType+";\n";
 }
 

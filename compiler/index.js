@@ -530,9 +530,7 @@ function getOperators(structure, fileName) {
         options.argType = newB
         typeB = newB
       }
-      //console.log('get op first time', typeA, op);
       var operator = getOperator(typeA, op, typeB, lineN, true)
-      //console.log('op pp ', operator);
       if (operator) {
         var msg ='Operator '+typeA+' '+op+' '+typeB+' already defined'
         if (operator.lineN) {
@@ -639,7 +637,6 @@ function compileTriple(triple, inner, level, ln) {
     var operator = getOperator(operatorTypeA, op, typeB, ln)
   }
 
-
   typeInfoA = getTypeInfo(a, typeA, typeRawInfoA)
   typeInfoB = getTypeInfo(b, typeB, typeRawInfoB)
 
@@ -657,11 +654,13 @@ function compileTriple(triple, inner, level, ln) {
   if (!operator) {
     err('Operator not found: '+operatorTypeA+' '+op+(typeB && typeB != 'undefined' && typeB != 'variable' ? ' '+typeB : ''), ln)
   }
-  if (operator.argIsType && operator.typeInfo[0] == '$type'){
-    operator.typeInfo[0] = b
-  }
 
   var opState = compileOperator(operator, typeInfoA, typeInfoB)
+  var typeInfo = (operator.typeInfo || []).slice()
+
+  if (operator.argIsType && typeInfo[0] == '$type'){
+    typeInfo[0] = b
+  }
   if (operator.type == 'undefined') {
     if (opState == 1) {
       err('operator ret type could not determined before recursion called from line '+ln, operator.lineN)
@@ -690,7 +689,7 @@ function compileTriple(triple, inner, level, ln) {
     if (setType === 'array') {
       // typeInfoB should have all information even if itgenerated from struct
       //setVarType(a, typeA, setType, [b], ln)
-      var setTypeInfo = determineType(operator.typeInfo[0], typeInfoA, typeInfoB, ln)
+      var setTypeInfo = determineType(typeInfo[0], typeInfoA, typeInfoB, ln)
 
       if (!setTypeInfo) {
         setTypeInfo = typeInfoB;
@@ -707,8 +706,6 @@ function compileTriple(triple, inner, level, ln) {
     setArgType = determineType(setArgType, typeInfoA, typeInfoB, ln)
     setVarType(b, typeB, setArgType, typeInfoB, ln)
   }
-
-  var typeInfo = operator.typeInfo || []
 
   if (code) {
     var declared = {}
