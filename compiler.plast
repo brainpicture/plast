@@ -75,8 +75,8 @@ plast compile code:string
     line isEmpty == false
       line isHeader
         this addHeader line
-      //else
-      //  this addLine line
+      else
+        this addLine line
   return true
 
 plast addHeader line:plastLine
