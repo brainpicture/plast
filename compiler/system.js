@@ -82,7 +82,11 @@ exports.getStructType = function(k, v, accessErr) {
     }
     var res = typeVar[1][v]
   }
-  return [res ? res[0] : 'variable', [k, v], 0]
+  if (res && res[0] == 'array') {
+    return [res[0], res[1] ? res[1] : [k, v], 0]
+  } else {
+    return [res ? res[0] : 'variable', [k, v], 0]
+  }
 }
 
 exports.setSubType = function(nameChain, type, typeInfo, scope) {

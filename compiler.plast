@@ -2,7 +2,7 @@
 
 variable plastOperator header:plastLine
   this.name = "wow"
-  "OPERATOR CREATION" print
+  "OPERATOR CREATION ("+header+")" print
 
 variable plastLine line:string
   this.line = line
@@ -45,8 +45,17 @@ plastLine isHeader
 plastLine isEmpty
   return this.tokens len == 0
 
+plastLine str
+  return this.line
+
 plastLine print
   "|"+this.line print
+
+plastLine + a:string
+  return (this.line + a)
+
+string + a:plastLine
+  return this + (a str)
 
 plast
   this.file = ""
@@ -68,14 +77,11 @@ plast compile code:string
         this addHeader line
       //else
       //  this addLine line
-
   return true
 
 plast addHeader line:plastLine
-  "addHeaders" print
-  line print
-  //op plastOperator line
-  //this.operators push op
+  op plastOperator line
+  this.operators push op
 
 main
   plast plast

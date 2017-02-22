@@ -468,7 +468,7 @@ function genFuncName(op, typeA, typeB) {
   } else {
     name.push(typeA)
   }
-  name.push(op)
+  name.push(encodeURIComponent(op).replace(/%/g, '_sym'))
   if (typeB == 'array') {
     name.push('$argArrayType')
   } else if (Array.isArray(typeB)) {
@@ -628,7 +628,7 @@ function compileTriple(triple, inner, level, ln) {
 
 
   var operatorTypeA = typeA
-  if (a == lex.THIS && typeA == 'struct' && (op != '.' && op != '=')) {
+  if (a == lex.THIS && typeA == 'struct' && (op != lex.DOT && op != '=')) {
     var operatorTypeA = CurOperator.name
     var operator = getOperator(operatorTypeA, op, typeB, ln)
   } else if (op == '=' && typeA == 'variable' && lexB == lex.VAR) {
@@ -638,6 +638,10 @@ function compileTriple(triple, inner, level, ln) {
   }
 
   typeInfoA = getTypeInfo(a, typeA, typeRawInfoA)
+  if (typeInfoA && typeInfoA[0] == 'this') {
+    console.log(typeA, typeRawInfoA);
+    console.log('----------',typeInfoA);
+  }
   typeInfoB = getTypeInfo(b, typeB, typeRawInfoB)
 
   if (typeA == 'undefined' && op == lex.RETURN) { // set type on return operator
@@ -726,6 +730,7 @@ function compileTriple(triple, inner, level, ln) {
           if (!typeInfoA || typeInfoA.length == 0) {
             err('this "'+typeA+'" has no type', ln)
           }
+          // typeInfoA should be string not variable name
           var retSubType = types.getNativeType(typeInfoA[0])
           if (!retSubType) {
             err('this "'+typeA + '" has no type', ln)
@@ -865,10 +870,11 @@ function compileTriple(triple, inner, level, ln) {
       typeInfo.push(typeB)
     }
   }
-  if (type === '*' && op == '.') {
+  if (type === '*' && op == lex.DOT) {
     var [type, typeInfo] = system.getStructType(a, b, () => {
       err('custom type properties could not be accessed outside type operator', ln)
     })
+    //console.log('RESULT:', type, typeInfo);
   }
 
   if (type == 'array' && (!typeInfo || typeInfo.length == 0)) {
