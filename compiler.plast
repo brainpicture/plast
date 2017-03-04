@@ -1,7 +1,12 @@
 "std.plast"
 
-variable plastOperator header:plastLine
+plastOperator
   this.name = "wow"
+
+plastOperator addHeader:plastLine
+  "OPERATOR CREATION ("+header+")" print
+
+plastOperator addLine:plastLine
   "OPERATOR CREATION ("+header+")" print
 
 variable plastLine line:string
@@ -69,19 +74,17 @@ plast err errText:string
 plast compile code:string
   this.file = code
   code = this.file readFileSync
+  op plastOperator
   code tok "\n" each lineStr
     this.lineNum += 1
     line plastLine lineStr
     line isEmpty == false
       line isHeader
-        this addHeader line
+        op addHeader line
+        this.operators push op
       else
-        this addLine line
+        op addLine line
   return true
-
-plast addHeader line:plastLine
-  op plastOperator line
-  this.operators push op
 
 main
   plast plast
