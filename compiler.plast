@@ -44,8 +44,7 @@ plastLine getTokens
   return tokens
 
 plastLine isHeader
-  this.shift == 0
-    block
+  return this.shift == 0
 
 plastLine isEmpty
   return this.tokens len == 0

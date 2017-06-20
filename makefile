@@ -20,6 +20,6 @@ test:
 	done;
 self:
 	@node ./compiler/index.js compiler.plast
-	@gcc -o main.o main.c
+	@gcc -o main.o main.c -w
 	@echo "--------"
 	@./main.o

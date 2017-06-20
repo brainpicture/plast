@@ -11,8 +11,13 @@ variable = arg:float
 variable = *
   `$this = $arg` * *
 
+bool $block
+  `if ($this) {$block} $`
+
 undefined else
-  `if (!condBool$level) {$block}`
+  `else {$block}`
+  block
+    `else {$block}`
 
 undefined return *
   `return $arg`
@@ -47,13 +52,9 @@ string getType
 
 string == arg:string
   `(strcmp($this, $arg) == 0)` bool
-  block
-    `condBool$level = (strcmp($this, $arg) == 0); if (condBool$level) {$block}` bool
 
 string != arg:string
   `(strcmp($this, $arg) != 0)` bool
-  block
-    `condBool$level = (strcmp($this, $arg) != 0); if (condBool$level) {$block}` bool
 
 string tok arg:string
   `_strTok($this, $arg)` array:string
@@ -85,23 +86,15 @@ int *= arg:int
 
 int > arg:int
   `($this > $arg)` bool
-  block
-    `condBool$level = ($this > $arg); if (condBool$level) {$block}` bool
 
 int < arg:int
   `($this < $arg)` bool
-  block
-    `condBool$level = ($this < $arg); if (condBool$level) {$block}` bool
 
 int == arg:int
   `($this == $arg)` bool
-  block
-    `condBool$level = ($this == $arg); if (condBool$level) {$block}` bool
 
 int != arg:int
   `($this != $arg)` bool
-  block
-    `condBool$level = ($this != $arg); if (condBool$level) {$block}` bool
 
 int >: arg:int
   `while ($this > $arg) {$block}` bool
@@ -110,10 +103,10 @@ int <: arg:int
   `while ($this < $arg) {$block}` bool
 
 int > arg:float
-  `if ((float) $this > $arg) {$block}` bool
+  `(float) $this > $arg` bool
 
 int < arg:float
-  `if ((float) $this > $arg) {$block}` bool
+  `(float) $this > $arg` bool
 
 int >: arg:float
   `while ((float) $this > $arg) {$block}` bool
@@ -202,9 +195,6 @@ float /= arg:int
 
 float == arg:int
   `($this == (float) $arg)` bool
-  block
-    `condBool$level = ($this == (float) $arg); if (condBool$level) {$block}` bool
-
 
 float + arg:float
   `($this + $arg)` float
@@ -245,22 +235,15 @@ float getType
 // bool
 bool && arg:bool
   `($this && $arg)` bool
-  block
-    `condBool$level = ($this && $arg); if (condBool$level) {$block}` bool
 
 bool || arg:bool
   `($this || $arg)` bool
-  block
-    `condBool$level = ($this || $arg); if (condBool$level) {$block}` bool
 
 bool ? tuple
   `$ternarOp(&$this, *$arg)`
 
 bool == arg:bool
   `($this == $arg)` bool
-  block
-    `condBool$level = ($this == $arg); if (condBool$level) {$block}` bool
-
 
 // tuples
 * , *
@@ -280,33 +263,21 @@ tuple = struct
 
 tuple == tuple
   `$structEqCheck(&$this, &$arg)` bool
-  block
-    `condBool$level = $structEqCheck(&$this, &$arg); if (condBool$level) {$block}` bool
 
 tuple != tuple
   `$structNotEqCheck(&$this, &$arg)` bool
-  block
-    `condBool$level = $structNotEqCheck(&$this, &$arg); if (condBool$level) {$block}` bool
 
 tuple > tuple
   `$structMoreCheck(&$this, &$arg)` bool
-  block
-    `condBool$level = $structMoreCheck(&$this, &$arg); if (condBool$level) {$block}` bool
 
 tuple >= tuple
   `$structMoreEqCheck(&$this, &$arg)` bool
-  block
-    `condBool$level = $structMoreEqCheck(&$this, &$arg); if (condBool$level) {$block}` bool
 
 tuple < tuple
   `$structLessCheck(&$this, &$arg)` bool
-  block
-    `condBool$level = $structLessCheck(&$this, &$arg); if (condBool$level) {$block}` bool
 
 tuple <= tuple
   `$structLessEqCheck(&$this, &$arg)` bool
-  block
-    `condBool$level = $structLessEqCheck(&$this, &$arg); if (condBool$level) {$block}` bool
 
 tuple array
   `$structToArray(*$this)`

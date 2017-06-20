@@ -681,6 +681,13 @@ function compileTriple(triple, inner, level, ln) {
     var type = operator.type
     var setType = operator.setType
     var setArgType = operator.setArgType
+    if (codeBlock && !code.match(/\$block/)) {
+      var blockOperator = getOperator(type, '$block', 'undefined', ln)
+      if (!blockOperator) {
+        err('operator not support blocks on line '+ln, operator.lineN)
+      }
+      code = blockOperator.code.replace(/\$this/g, code)
+    }
   }
 
   setType = determineType(setType, typeInfoA, typeInfoB, ln)
@@ -713,6 +720,10 @@ function compileTriple(triple, inner, level, ln) {
 
   if (code) {
     var declared = {}
+    if (code.slice(-1) == "$") {
+      code = code.slice(0, -1)
+      var noending = true
+    }
 
     code = code.replace(/\$([a-zA-Z]+)/g, function(match, word) {
       switch(word) {
@@ -835,7 +846,9 @@ function compileTriple(triple, inner, level, ln) {
         err('codeblock in inner code', ln);
       }
     } else {
-      code += ";\n"
+      if (!noending) {
+        code += ";\n"
+      }
     }
   }
 
@@ -902,6 +915,7 @@ function compileMain(lines, level) {
     }
     codeAll += code
   }
+  //codeAll = codeAll.replace(/;\n$join/g, '')
   return codeAll
 }
 

@@ -15,3 +15,5 @@ exports.TRUE = 'true'
 exports.FALSE = 'false'
 
 exports.DOT = '.'
+
+exports.ENDLINE = ";\n"
