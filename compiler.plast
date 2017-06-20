@@ -3,11 +3,11 @@
 plastOperator
   this.name = "wow"
 
-plastOperator addHeader:plastLine
-  "OPERATOR CREATION ("+header+")" print
+plastOperator addHeader header:plastLine
+  "OPERATOR CREATION (" + (header str) + ")" print
 
-plastOperator addLine:plastLine
-  "OPERATOR CREATION ("+header+")" print
+plastOperator addLine header:plastLine
+  "LINE (" + (header str) + ")" print
 
 variable plastLine line:string
   this.line = line

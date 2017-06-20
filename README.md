@@ -3,6 +3,18 @@ PLAST
 
 PLAST is an early experiment of building next-gen scientific environment.
 
+Main idea of this project is to realize different approach in programming.
+PLAST is designed to be procedural type-oriented extandable static programming language with global scope.
+
+
+
+Examples
+========
+```
+"Hello world" print
+```
+
+
 # run main.plast file
 ```
 $ make

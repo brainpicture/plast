@@ -293,7 +293,9 @@ exports.contextPush = function(operator) {
   Variables = {}
   Precodes = []
   VariableIndex = 0
-  operator.ctxId = CtxNum++
+  if (!operator.ctxId) {
+    operator.ctxId = CtxNum++
+  }
 }
 
 exports.contextPop = function() {
@@ -376,7 +378,7 @@ exports.wrapBlock = function(code, operator) {
   } else {
     var typeCode = types.toNative((operator.setType || operator.thisType), operator.thisTypeInfo || false, lex.THIS, true)
   }
-FuncCode += `void ${blockName}(${typeCode}, struct ctx${operator.ctxId}* ctx) {
+FuncCode += `void ${blockName}(${typeCode}, ctx${operator.ctxId}* ctx) {
 ${code}
 }\n\n`
   return blockName
