@@ -304,6 +304,9 @@ array print
 array len
   `(int) kv_size($this)` int
 
+array = arg:array
+  `$this = $arg` array
+
 undefined array
   `$arrayInit()` array
 

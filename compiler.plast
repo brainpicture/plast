@@ -2,12 +2,19 @@
 
 plastOperator
   this.name = "wow"
+  this.lines [] plastLine
 
 plastOperator addHeader header:plastLine
   "OPERATOR CREATION (" + (header str) + ")" print
+  header printTokens
 
 plastOperator addLine header:plastLine
   "LINE (" + (header str) + ")" print
+  this.lines push header
+
+plastOperator print
+  "name: "+this.name print
+  "lines: " print
 
 variable plastLine line:string
   this.line = line
@@ -55,6 +62,9 @@ plastLine str
 plastLine print
   "|"+this.line print
 
+plastLine printTokens
+  this.tokens print
+
 plastLine + a:string
   return (this.line + a)
 
@@ -85,6 +95,13 @@ plast compile code:string
         op addLine line
   return true
 
+plast printStructure
+  this.operators each op
+    op print
+
+
 main
   plast plast
   plast compile "main.plast"
+
+  plast printStructure
