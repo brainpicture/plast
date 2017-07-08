@@ -538,6 +538,9 @@ function getOperators(structure, fileName) {
         }
         err(msg, lineN)
       }
+      if (typeA == 'variable' && typeB == 'undefined') { // defining new type
+        options.returnSelf = true
+      }
       CurOperator = setOperator(typeA, op, typeB, options, lineN)
     } else {
       if (!innerLine) {
@@ -882,6 +885,8 @@ function compileTriple(triple, inner, level, ln) {
     } else {
       typeInfo.push(typeB)
     }
+  } else if (type == 'array' && op == '=' && (!typeInfo || typeInfo.length == 0)) {
+    typeInfo = typeInfoA
   }
   if (type === '*' && op == lex.DOT) {
     var [type, typeInfo] = system.getStructType(a, b, () => {

@@ -307,6 +307,12 @@ array len
 array = arg:array
   `$this = $arg` array
 
+array get index:int
+  `kv_A(*&$this, $arg)`  $thisSubType
+
+array pop
+  `kv_pop(*&$this)` $thisSubType
+
 undefined array
   `$arrayInit()` array
 
@@ -338,9 +344,6 @@ struct getType
 
 variable = array
   `$this = $arg` array:$argSubType array
-
-array pop
-  `kv_pop(*&$this)` $thisSubType
 
 // files
 string readFileSync

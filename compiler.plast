@@ -16,7 +16,12 @@ plastOperator print
   "name: "+this.name print
   "lines: " print
 
-variable plastLine line:string
+plastLine
+  this.line = ""
+  this.shift = 0
+  this.tokens [] string
+
+plastLine = line:string
   this.line = line
   this.shift = line getLeftShift
   this.tokens = this getTokens
@@ -86,7 +91,8 @@ plast compile code:string
   op plastOperator
   code tok "\n" each lineStr
     this.lineNum += 1
-    line plastLine lineStr
+    line plastLine
+    line = lineStr
     line isEmpty == false
       line isHeader
         op addHeader line
